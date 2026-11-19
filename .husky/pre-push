@@ -1,0 +1,14 @@
+# Bloqueia o push se lint, checagem de tipos ou testes falharem.
+# Entra na raiz pelo caminho que o git informa (no Windows isso normaliza
+# a letra do drive, evitando o bug do Vitest com "d:" minúsculo).
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# No Windows o shell do git nem sempre consegue executar o "npm" sem extensão.
+if npm.cmd -v >/dev/null 2>&1; then NPM=npm.cmd; else NPM=npm; fi
+
+echo "pre-push: rodando lint, typecheck e testes..."
+"$NPM" run check || {
+  echo ""
+  echo "pre-push: falhou. Corrija os erros acima antes de dar push."
+  exit 1
+}
