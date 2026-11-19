@@ -28,6 +28,8 @@ Se o projeto exigir confirmação de e-mail, a pessoa só entra depois de abrir 
 
 ## Estrutura
 
+Explicação completa das pastas, do padrão e das tecnologias em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+
 ```
 src/
   app/          entrada do app: provedores, rotas e layout (menu lateral)
