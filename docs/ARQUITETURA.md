@@ -31,6 +31,7 @@ Navegador (React)  ──►  Supabase (login + banco Postgres)
 | **Lucide** | Ícones. |
 | **Recharts** | Gráficos do painel. |
 | **Sonner** | Avisos rápidos ("Lançamento salvo"). |
+| **Fontsource** | As fontes (Bricolage Grotesque e Figtree) instaladas pelo npm, sem depender do Google Fonts. |
 
 ### Dados e formulários
 
@@ -172,6 +173,60 @@ A chave do Supabase que vai no navegador é pública. Quem impede uma pessoa de 
 ### 6. Páginas carregadas sob demanda
 
 As páginas do `router.tsx` usam `lazy()`: o navegador só baixa o código de uma tela quando a pessoa entra nela. O site abre mais rápido.
+
+---
+
+## Visual: cores, fontes e peças
+
+Tudo o que é visual e global fica em `src/index.css`. As telas usam os nomes das cores (`text-income`, `bg-brand`), nunca o código hexadecimal, assim trocar uma cor é mudar uma linha.
+
+### Cores
+
+As cores seguem a escala do Tailwind. O tema escuro (o padrão) usa o tom 500; o claro usa o 600, um pouco mais escuro, para ler bem sobre o branco.
+
+| Nome | Para quê | Escuro | Claro |
+| --- | --- | --- | --- |
+| `income` | Receitas, metas em dia | `#22c55e` | `#16a34a` |
+| `expense` | Gastos, metas estouradas | `#f43f5e` | `#e11d48` |
+| `warning` | Alerta (meta perto do limite) | `#f59e0b` | `#d97706` |
+| `brand` / `primary` | Marca e botões principais | `#14b8a6` | `#0d9488` |
+
+Cada uma tem uma versão `-soft` (ex.: `bg-income-soft`), um fundo suave para pílulas e ícones. Verde, vermelho e âmbar são reservados para significado: nunca são usados como "cor de enfeite".
+
+Cor nunca aparece sozinha para dar uma informação: a variação vem com sinal e seta (`↗ +1%`), e o status da meta vem com ícone.
+
+### Fontes
+
+- **Bricolage Grotesque** (`font-display`): títulos.
+- **Figtree** (`font-sans`): todo o resto, inclusive os valores em reais.
+
+### Classes próprias
+
+| Classe | Uso |
+| --- | --- |
+| `surface` | Fundo de card com um fio de 1px. É o que o `Card` usa. |
+| `figure` | Valores em listas e indicadores: algarismos de mesma largura, que alinham em coluna. |
+| `eyebrow` | Rótulo pequeno em caixa alta acima de um valor ("RECEITAS"). |
+| `numeral` | Número grande com a fonte de título (usado no campo de valor do formulário). |
+
+> Não coloque `font-feature-settings` no `html`: ele é herdado e anula a classe `tabular-nums`.
+
+### Peças reutilizáveis
+
+- `shared/components/amount.tsx`: valor em reais com o "R$" e os centavos menores. Usado nos números de destaque.
+- `shared/components/money-text.tsx`: valor em reais simples, com cor de receita ou gasto.
+- `shared/components/feedback.tsx`: estados de vazio, erro e carregando (inclui o esqueleto do painel).
+- `features/orcamentos/status-tone.ts`: cor e ícone de cada status de meta, usados no painel e em Orçamentos.
+
+### Como o painel é montado
+
+De cima para baixo, do mais importante ao detalhe:
+
+1. **Destaque do mês** (`summary-cards.tsx`): quanto sobra, uma frase de contexto e a régua do mês.
+2. **Faixa de indicadores** (`kpi-cards.tsx`): receitas, gastos, saldo e metas, cada um com a variação contra o mês anterior e a tendência dos últimos 6 meses. Cada card leva à tela de detalhe.
+3. **Ritmo de gastos** e **Para onde foi o dinheiro** (`trend-cards.tsx`, `charts.tsx`).
+4. **Metas por categoria** e **Lançamentos recentes** (`detail-cards.tsx`).
+5. **Últimos 6 meses** e **Destaques**.
 
 ---
 
