@@ -1,268 +1,143 @@
 import { formatBrl } from '@/domain/money'
-import { monthLabel } from '@/domain/month'
-import { budgetStatusLabel } from '@/domain/summary'
-import { Sparkline } from '@/features/painel/charts'
+import { monthName } from '@/domain/month'
 import { formatPercent } from '@/features/painel/format'
 import type { DashboardInsights } from '@/features/painel/insights'
 import type { DashboardModel } from '@/features/painel/model'
-import { statusTone } from '@/features/painel/components/status-tone'
-import { MoneyText } from '@/shared/components/money-text'
+import { Amount } from '@/shared/components/amount'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
-import { Card, CardContent } from '@/shared/ui/card'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus, Plus, Target, Wallet, type LucideIcon } from 'lucide-react'
-import { Link } from 'react-router'
+import { CalendarDays, Plus, Sparkles } from 'lucide-react'
 
-export function EmptyMonth({ month, onAdd }: { month: string; onAdd: () => void }) {
+export function EmptyMonth({ month, onAdd, disabled }: { month: string; onAdd: () => void; disabled?: boolean }) {
   return (
-    <Card className="fade-up border-dashed bg-brand/5">
-      <CardContent className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand">
-            <Wallet className="size-5" />
-          </span>
-          <div>
-            <p className="font-medium">Nada lançado em {monthLabel(month).toLowerCase()}</p>
-            <p className="text-sm text-muted-foreground">
-              Adicione receitas e gastos para ver o saldo, o ritmo do mês e as metas ganharem vida.
-            </p>
-          </div>
+    <div className="flex flex-col items-start gap-4 rounded-xl bg-brand-soft p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground" aria-hidden="true">
+          <Sparkles className="size-4" />
+        </span>
+        <div>
+          <p className="font-display text-lg font-semibold">Nada lançado em {monthName(month)} ainda</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Comecem pela receita do mês e pelos primeiros gastos. O saldo, o ritmo e as metas aparecem logo abaixo.
+          </p>
         </div>
-        <Button className="bg-brand text-brand-foreground hover:bg-brand/90" onClick={onAdd}>
-          <Plus className="size-4" />
-          Adicionar lançamento
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+      <Button onClick={onAdd} disabled={disabled} className="shrink-0">
+        <Plus className="size-4" />
+        Novo lançamento
+      </Button>
+    </div>
   )
 }
 
-export function BalanceHero({
+/**
+  Abertura do painel: o número que importa (quanto sobra) em destaque, uma frase de contexto
+  e a régua do mês. A régua é a receita inteira; a parte cheia é o que já saiu; a marca fina é hoje.
+  Os indicadores detalhados ficam na faixa logo abaixo (kpi-cards.tsx).
+*/
+export function MonthHero({
   model,
   insights,
-  previousLabel,
+  month,
 }: {
   model: DashboardModel
   insights: DashboardInsights
-  previousLabel: string
+  month: string
 }) {
-  const flowTotal = model.income + model.expense
-  const spentShare = model.income > 0 ? Math.min(model.expense / model.income, 1) : model.expense > 0 ? 1 : 0
-  const positive = model.balance >= 0
+  const name = monthName(month)
+  const hasIncome = model.income > 0
+  const spentShare = hasIncome ? model.expense / model.income : null
+  const timeShare = insights.isCurrentMonth && insights.totalDays > 0 ? insights.daysElapsed / insights.totalDays : null
+  const over = model.balance < 0
+  const ahead = spentShare !== null && timeShare !== null && spentShare > timeShare + 0.03
+
+  const headline = !hasIncome
+    ? model.expense > 0
+      ? { verb: insights.isCurrentMonth ? 'Já saíram' : 'Saíram', value: model.expense }
+      : { verb: `Em ${name}`, value: 0 }
+    : over
+      ? { verb: 'Faltam', value: -model.balance }
+      : { verb: insights.isCurrentMonth ? 'Sobram' : 'Sobraram', value: model.balance }
+
+  const lead = hasIncome
+    ? `Em ${name} entraram ${formatBrl(model.income)} e ${insights.isCurrentMonth ? 'já saíram' : 'saíram'} ${formatBrl(
+        model.expense,
+      )}.`
+    : model.expense > 0
+      ? `Ainda não há receita lançada em ${name}.`
+      : `Nenhum movimento em ${name}.`
+
+  const verdict = !hasIncome
+    ? 'Lancem a receita do mês para ver quanto ainda sobra.'
+    : over
+      ? 'Os gastos já passaram do que entrou neste mês.'
+      : timeShare === null
+        ? model.savingsPercent !== null
+          ? `Vocês guardaram ${model.savingsPercent}% do que entrou.`
+          : null
+        : ahead
+          ? 'O gasto está na frente do calendário. Vale segurar um pouco até o fim do mês.'
+          : 'O gasto está atrás do calendário. Dá para respirar.'
+
+  const verdictTone = over ? 'text-expense' : ahead ? 'text-warning' : hasIncome ? 'text-income' : 'text-muted-foreground'
+  const fill = spentShare === null ? 0 : Math.min(spentShare, 1)
+  const fillTone = over ? 'bg-expense' : ahead ? 'bg-warning' : 'bg-brand'
 
   return (
-    <Card className="relative overflow-hidden md:col-span-2 xl:col-span-1">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-24 -right-16 size-56 rounded-full bg-brand/10 blur-3xl"
-      />
-      <CardContent className="relative flex h-full flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <span className="flex size-7 items-center justify-center rounded-md bg-brand/10 text-brand">
-              <Wallet className="size-4" />
-            </span>
-            Saldo do mês
-          </p>
-          {model.savingsPercent !== null ? (
-            <span
-              className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-medium',
-                positive ? 'bg-income/10 text-income' : 'bg-expense/10 text-expense',
-              )}
-            >
-              {positive ? `Guardou ${model.savingsPercent}%` : 'Gastou mais do que entrou'}
-            </span>
-          ) : null}
-        </div>
-        <div>
-          <p className={cn('text-4xl font-semibold tracking-tight', positive ? 'text-foreground' : 'text-expense')}>
-            {formatBrl(model.balance)}
-          </p>
-          <ChangeText
-            className="mt-1"
-            value={insights.balanceChange}
-            format={(value) => formatBrl(Math.abs(value))}
-            goodWhen="up"
-            previousLabel={previousLabel}
+    <section className="grid gap-7" aria-labelledby="month-hero-title">
+      <div className="grid gap-3">
+        <p className="eyebrow">{hasIncome ? (over ? 'Saldo negativo do mês' : 'Saldo livre do mês') : 'Resumo do mês'}</p>
+        <h1
+          id="month-hero-title"
+          className="flex flex-wrap items-baseline gap-x-[0.28em] text-[2.75rem] leading-[0.95] font-semibold sm:text-7xl lg:text-[5.25rem]"
+        >
+          <span className="font-sans text-[0.42em] font-medium tracking-tight text-muted-foreground">{headline.verb}</span>
+          <Amount
+            value={headline.value}
+            className={cn('font-sans tracking-[-0.035em] [font-variant-numeric:lining-nums_proportional-nums]', over && 'text-expense')}
+            minorClassName="opacity-50"
           />
-        </div>
-        <div className="mt-auto grid gap-2">
-          <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
-            {flowTotal > 0 ? (
-              <>
-                <span className="h-full rounded-l-full bg-expense" style={{ width: `${spentShare * 100}%` }} />
-                {spentShare < 1 ? <span className="h-full flex-1 rounded-r-full bg-income" /> : null}
-              </>
+        </h1>
+        <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">{lead}</p>
+      </div>
+
+      {hasIncome ? (
+        <div className="grid gap-3">
+          <div
+            className="relative h-3.5 rounded-full bg-track"
+            role="img"
+            aria-label={`Já saiu ${formatPercent(spentShare ?? 0)} da receita${
+              timeShare !== null ? `; o mês está em ${formatPercent(timeShare)}` : ''
+            }.`}
+          >
+            <div className="absolute inset-0 overflow-hidden rounded-full">
+              <div className={cn('fill-in h-full rounded-full', fillTone)} style={{ width: `${fill * 100}%` }} />
+            </div>
+            {timeShare !== null ? (
+              <div
+                className="absolute -inset-y-1.5 w-[3px] -translate-x-1/2 rounded-full bg-foreground ring-2 ring-background"
+                style={{ left: `${timeShare * 100}%` }}
+                aria-hidden="true"
+              />
             ) : null}
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>
-              Gastou <span className="font-medium text-foreground">{formatPercent(spentShare)}</span> do que entrou
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-sm">
+            <span className="flex items-center gap-2 font-medium">
+              <span className={cn('size-2 rounded-full', fillTone)} aria-hidden="true" />
+              Já saiu {formatPercent(spentShare ?? 0)} da receita
             </span>
-            <span>
-              Sobra <MoneyText value={Math.max(model.balance, 0)} className="font-medium text-foreground" />
-            </span>
+            {timeShare !== null ? (
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <CalendarDays className="size-3.5" aria-hidden="true" />
+                Dia {insights.daysElapsed} de {insights.totalDays}
+              </span>
+            ) : null}
           </div>
+          {verdict ? <p className={cn('text-[15px] font-medium', verdictTone)}>{verdict}</p> : null}
         </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ChangeText({
-  value,
-  format,
-  goodWhen,
-  previousLabel,
-  className,
-}: {
-  value: number | null
-  format: (value: number) => string
-  goodWhen: 'up' | 'down'
-  previousLabel: string
-  className?: string
-}) {
-  if (value === null) {
-    return <p className={cn('text-xs text-muted-foreground', className)}>Sem dados de {previousLabel} para comparar</p>
-  }
-  const Icon = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus
-  const good = value === 0 ? null : goodWhen === 'up' ? value > 0 : value < 0
-  return (
-    <p className={cn('flex items-center gap-1 text-xs text-muted-foreground', className)}>
-      <span
-        className={cn(
-          'inline-flex items-center gap-0.5 font-medium',
-          good === true && 'text-income',
-          good === false && 'text-expense',
-        )}
-      >
-        <Icon className="size-3.5" aria-hidden="true" />
-        {value > 0 ? '+' : value < 0 ? '−' : ''}
-        {format(value)}
-      </span>
-      vs. {previousLabel}
-    </p>
-  )
-}
-
-export function KpiTile({
-  label,
-  icon: Icon,
-  tone,
-  value,
-  hint,
-  change,
-  goodWhen,
-  previousLabel,
-  spark,
-}: {
-  label: string
-  icon: LucideIcon
-  tone: 'income' | 'expense'
-  value: number
-  hint: string
-  change: number | null
-  goodWhen: 'up' | 'down'
-  previousLabel: string
-  spark: number[]
-}) {
-  return (
-    <Card>
-      <CardContent className="flex h-full flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <span
-            className={cn(
-              'flex size-7 items-center justify-center rounded-md',
-              tone === 'income' ? 'bg-income/10 text-income' : 'bg-expense/10 text-expense',
-            )}
-          >
-            <Icon className="size-4" aria-hidden="true" />
-          </span>
-        </div>
-        <div>
-          <p className="text-2xl font-semibold tracking-tight">{formatBrl(value)}</p>
-          <p className="text-xs text-muted-foreground">{hint}</p>
-        </div>
-        <div className="mt-auto grid gap-1">
-          <Sparkline values={spark} color={tone === 'income' ? 'var(--income)' : 'var(--expense)'} />
-          <ChangeText value={change} format={(v) => `${Math.abs(v)}%`} goodWhen={goodWhen} previousLabel={previousLabel} />
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-export function BudgetTile({ model, insights, month }: { model: DashboardModel; insights: DashboardInsights; month: string }) {
-  const { overall } = model
-  if (overall.limit === 0) {
-    return (
-      <Card>
-        <CardContent className="flex h-full flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">Metas</p>
-            <span className="flex size-7 items-center justify-center rounded-md bg-muted">
-              <Target className="size-4" aria-hidden="true" />
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Defina um limite por categoria e acompanhe aqui quanto ainda cabe no mês.
-          </p>
-          <Button asChild variant="outline" size="sm" className="mt-auto self-start">
-            <Link to={`/orcamentos?mes=${month}`}>
-              Criar metas
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const tone = statusTone[overall.status]
-  const StatusIcon = tone.icon
-  return (
-    <Card>
-      <CardContent className="flex h-full flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">Metas</p>
-          <span className={cn('flex items-center gap-1 text-xs font-medium', tone.text)}>
-            <StatusIcon className="size-3.5" aria-hidden="true" />
-            {budgetStatusLabel(overall.status)}
-          </span>
-        </div>
-        <div>
-          <p className="text-2xl font-semibold tracking-tight">{overall.percent}%</p>
-          <p className="text-xs text-muted-foreground">
-            {formatBrl(overall.spent)} de {formatBrl(overall.limit)}
-          </p>
-        </div>
-        <div className="mt-auto grid gap-2">
-          <div
-            className="h-2 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-valuenow={Math.min(overall.percent, 100)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Uso das metas do mês"
-          >
-            <div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${Math.min(overall.percent, 100)}%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {insights.remainingBudget !== null && insights.remainingBudget < 0 ? (
-              <>Passou {formatBrl(-insights.remainingBudget)} do limite</>
-            ) : insights.dailyAllowance !== null ? (
-              <>
-                Pode gastar <span className="font-medium text-foreground">{formatBrl(insights.dailyAllowance)}/dia</span> até o
-                fim do mês
-              </>
-            ) : (
-              <>Restam {formatBrl(Math.max(insights.remainingBudget ?? 0, 0))}</>
-            )}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+      ) : verdict ? (
+        <p className="text-[15px] text-muted-foreground">{verdict}</p>
+      ) : null}
+    </section>
   )
 }

@@ -1,69 +1,95 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/geist';
+@import '@fontsource-variable/bricolage-grotesque/standard.css';
+@import '@fontsource-variable/figtree';
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Paleta: preto e cores vivas (escala do Tailwind)
+  preto   #000000  fundo do app (tema escuro, o padrão)
+  carvão  #121212  superfícies (painéis, diálogos)
+  teal    #14b8a6  marca e ações principais
+  verde   #22c55e  receitas, metas em dia
+  rosa    #f43f5e  gastos, metas estouradas
+  âmbar   #f59e0b  alerta
+  O tema claro usa um tom acima (600) das mesmas cores, para ler bem sobre o branco.
+*/
 :root {
   color-scheme: light;
-  --background: oklch(0.985 0.002 247);
-  --foreground: oklch(0.21 0.006 285.885);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.006 285.885);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.006 285.885);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --income: oklch(0.527 0.154 150.069);
-  --expense: oklch(0.586 0.222 17.585);
-  --warning: oklch(0.666 0.157 58.318);
-  --brand: oklch(0.52 0.19 268);
-  --brand-foreground: oklch(0.99 0 0);
-  --chart-grid: oklch(0.93 0.004 286);
-  --chart-muted: oklch(0.78 0.01 286);
-  --radius: 0.75rem;
+  --background: #f4f4f4;
+  --foreground: #141414;
+  --card: #ffffff;
+  --card-foreground: #141414;
+  --popover: #ffffff;
+  --popover-foreground: #141414;
+  --primary: #0d9488;
+  --primary-foreground: #ffffff;
+  --secondary: #e9e9e9;
+  --secondary-foreground: #141414;
+  --muted: #ebebeb;
+  --muted-foreground: #666666;
+  --accent: #ececec;
+  --accent-foreground: #141414;
+  --destructive: #e11d48;
+  --border: #e2e2e2;
+  --input: #d4d4d4;
+  --ring: #0d9488;
+  --income: #16a34a;
+  --expense: #e11d48;
+  --warning: #d97706;
+  --brand: #0d9488;
+  --brand-foreground: #ffffff;
+  --brand-soft: #ccfbf1;
+  --chart-grid: #e6e6e6;
+  --chart-muted: #b3b3b3;
+  --track: #e4e4e4;
+  --overlay: rgb(0 0 0 / 0.45);
+  --card-edge: 0 0 0 1px rgb(0 0 0 / 0.05), 0 1px 2px rgb(0 0 0 / 0.04);
+  --income-soft: #dcfce7;
+  --expense-soft: #ffe4e6;
+  --warning-soft: #fef3c7;
+  --radius: 1.25rem;
 }
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --income: oklch(0.723 0.192 149.58);
-  --expense: oklch(0.718 0.169 17.42);
-  --warning: oklch(0.828 0.171 84.429);
-  --brand: oklch(0.7 0.15 268);
-  --brand-foreground: oklch(0.18 0.03 268);
-  --chart-grid: oklch(1 0 0 / 7%);
-  --chart-muted: oklch(0.5 0.01 286);
+  --background: #000000;
+  --foreground: #ededed;
+  --card: #121212;
+  --card-foreground: #ededed;
+  --popover: #181818;
+  --popover-foreground: #ededed;
+  --primary: #14b8a6;
+  --primary-foreground: #04201d;
+  --secondary: #1f1f1f;
+  --secondary-foreground: #ededed;
+  --muted: #1c1c1c;
+  --muted-foreground: #9a9a9a;
+  --accent: #222222;
+  --accent-foreground: #ededed;
+  --destructive: #f43f5e;
+  --border: #262626;
+  --input: #333333;
+  --ring: #14b8a6;
+  --income: #22c55e;
+  --expense: #f43f5e;
+  --warning: #f59e0b;
+  --brand: #14b8a6;
+  --brand-foreground: #04201d;
+  --brand-soft: #0b2e2a;
+  --chart-grid: #222222;
+  --chart-muted: #555555;
+  --track: #242424;
+  --overlay: rgb(0 0 0 / 0.7);
+  --card-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  --income-soft: #0d2e19;
+  --expense-soft: #3a0d18;
+  --warning-soft: #36260a;
 }
 
 @theme inline {
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Figtree Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Figtree Variable', ui-sans-serif, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -87,10 +113,17 @@
   --color-warning: var(--warning);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-brand-soft: var(--brand-soft);
+  --color-track: var(--track);
+  --color-income-soft: var(--income-soft);
+  --color-expense-soft: var(--expense-soft);
+  --color-warning-soft: var(--warning-soft);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: var(--radius);
+  --radius-2xl: 1.75rem;
+  --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
@@ -98,8 +131,13 @@
     @apply border-border;
   }
 
+  /*
+    Sem font-feature-settings global: ele herda e anula a classe tabular-nums.
+    O padrão da fonte já é proporcional; listas e tabelas pedem tabular-nums.
+  */
   html {
     @apply font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -107,6 +145,19 @@
     min-height: 100svh;
     background: var(--background);
     color: var(--foreground);
+    transition: background-color 240ms ease, color 240ms ease;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-variation-settings: 'opsz' 32;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   button,
@@ -115,6 +166,53 @@
   textarea {
     font: inherit;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--brand-soft);
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 60;
+}
+
+/* Número grande e solto (destaque do topo): fonte de título, algarismos proporcionais. */
+@utility numeral {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums proportional-nums;
+  font-variation-settings: 'opsz' 96, 'wdth' 88;
+  letter-spacing: -0.025em;
+}
+
+/* Valor de indicador ou de lista: fonte do texto, peso forte, algarismos que alinham em coluna. */
+@utility figure {
+  font-family: var(--font-sans);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+/* Rótulo pequeno em caixa alta, acima de um valor. */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Superfície de card: tom do papel e um fio de 1px para separar do fundo. */
+@utility surface {
+  background: var(--card);
+  color: var(--card-foreground);
+  border-radius: var(--radius);
+  box-shadow: var(--card-edge);
 }
 
 @keyframes overlay-in {
@@ -129,7 +227,7 @@
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.98);
+    transform: translate(-50%, -47%) scale(0.97);
   }
   to {
     opacity: 1;
@@ -137,33 +235,63 @@
   }
 }
 
-.overlay-in {
-  animation: overlay-in 150ms ease;
-}
-
-.dialog-in {
-  animation: dialog-in 160ms ease;
-}
-
-@keyframes fade-up {
+@keyframes sheet-in {
   from {
-    opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(100%);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
 
-.fade-up {
-  animation: fade-up 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+/* A régua do mês enche uma vez, quando o painel abre. */
+@keyframes fill-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.overlay-in {
+  animation: overlay-in 200ms ease;
+}
+
+.dialog-in {
+  animation: dialog-in 280ms var(--ease-fluid);
+}
+
+@media (max-width: 639px) {
+  .dialog-in {
+    animation: sheet-in 340ms var(--ease-fluid);
+  }
+}
+
+.fill-in {
+  transform-origin: left;
+  animation: fill-in 900ms var(--ease-fluid) 120ms both;
+}
+
+.page-in {
+  animation: page-in 220ms ease both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fade-up,
-  .overlay-in,
-  .dialog-in {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
   }
 }

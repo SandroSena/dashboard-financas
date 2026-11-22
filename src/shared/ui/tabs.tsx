@@ -3,13 +3,13 @@ import * as TabsPrimitive from '@radix-ui/react-tabs'
 import type { ComponentProps } from 'react'
 
 export function Tabs({ className, ...props }: ComponentProps<typeof TabsPrimitive.Root>) {
-  return <TabsPrimitive.Root className={cn('grid gap-4', className)} {...props} />
+  return <TabsPrimitive.Root className={cn('grid gap-5', className)} {...props} />
 }
 
 export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn('inline-flex h-10 items-center rounded-lg bg-muted p-1 text-muted-foreground', className)}
+      className={cn('inline-flex w-fit items-center rounded-full bg-muted p-1 text-muted-foreground', className)}
       {...props}
     />
   )
@@ -19,7 +19,7 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsP
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        'inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        'inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium transition-[background-color,color,box-shadow] duration-200 ease-fluid hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[0_1px_2px_rgb(0_0_0/0.12)]',
         className,
       )}
       {...props}

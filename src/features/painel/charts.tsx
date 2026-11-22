@@ -1,4 +1,5 @@
 import { formatBrl } from '@/domain/money'
+import { capitalize } from '@/domain/month'
 import type { CategoryShare, PacePoint } from '@/features/painel/insights'
 import type { MonthPoint } from '@/features/painel/model'
 import { formatCompactBrl, formatPercent } from '@/features/painel/format'
@@ -19,19 +20,19 @@ import {
   YAxis,
 } from 'recharts'
 
-const tick = { fill: 'var(--muted-foreground)', fontSize: 12 }
+const tick = { fill: 'var(--muted-foreground)', fontSize: 12, fontFamily: 'var(--font-sans)' }
 type TooltipRow = { label: string; value: number; color: string; dashed?: boolean }
 
 function TooltipCard({ title, rows, footer }: { title: string; rows: TooltipRow[]; footer?: ReactNode }) {
   return (
-    <div className="min-w-44 rounded-lg border bg-popover px-3 py-2 text-sm shadow-lg">
-      <p className="mb-1.5 text-xs font-medium text-muted-foreground">{title}</p>
+    <div className="min-w-48 rounded-lg bg-popover px-3.5 py-2.5 text-sm shadow-[0_12px_32px_-12px_rgb(0_0_0/0.4)] ring-1 ring-border">
+      <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{title}</p>
       <div className="grid gap-1">
         {rows.map((row) => (
           <p key={row.label} className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-2">
               <span
-                className={cn('h-0.5 w-3 rounded-full', row.dashed && 'opacity-60')}
+                className={cn('h-1 w-3 rounded-full', row.dashed && 'opacity-60')}
                 style={{ backgroundColor: row.color }}
               />
               {row.label}
@@ -47,14 +48,14 @@ function TooltipCard({ title, rows, footer }: { title: string; rows: TooltipRow[
 
 export function LegendItem({ color, label, dashed = false }: { color: string; label: string; dashed?: boolean }) {
   return (
-    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+    <span className="flex items-center gap-2 text-sm text-muted-foreground">
       {dashed ? (
         <span className="flex w-4 gap-0.5" aria-hidden="true">
-          <span className="h-0.5 flex-1 rounded-full" style={{ backgroundColor: color }} />
-          <span className="h-0.5 flex-1 rounded-full" style={{ backgroundColor: color }} />
+          <span className="h-1 flex-1 rounded-full" style={{ backgroundColor: color }} />
+          <span className="h-1 flex-1 rounded-full" style={{ backgroundColor: color }} />
         </span>
       ) : (
-        <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
+        <span className="h-1 w-4 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
       )}
       {label}
     </span>
@@ -68,9 +69,11 @@ function dayTicks(totalDays: number): number[] {
 export function SpendingPace({
   points,
   totalDays,
+  previousLabel = 'mês anterior',
 }: {
   points: PacePoint[]
   totalDays: number
+  previousLabel?: string
 }) {
   const gradientId = useId().replace(/:/g, '')
   const peak = points.reduce(
@@ -85,7 +88,7 @@ export function SpendingPace({
         <ComposedChart data={points} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--expense)" stopOpacity={0.22} />
+              <stop offset="0%" stopColor="var(--expense)" stopOpacity={0.18} />
               <stop offset="100%" stopColor="var(--expense)" stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -118,7 +121,7 @@ export function SpendingPace({
               if (point.projected !== null && point.current === null)
                 rows.push({ label: 'Projeção', value: point.projected, color: 'var(--expense)', dashed: true })
               if (point.previous !== null)
-                rows.push({ label: 'Mês anterior', value: point.previous, color: 'var(--chart-muted)' })
+                rows.push({ label: capitalize(previousLabel), value: point.previous, color: 'var(--chart-muted)' })
               const diff = point.current !== null && point.previous !== null ? point.current - point.previous : null
               return (
                 <TooltipCard
@@ -126,11 +129,11 @@ export function SpendingPace({
                   rows={rows}
                   footer={
                     diff === null ? null : diff > 0 ? (
-                      <>{formatBrl(diff)} a mais que no mês anterior</>
+                      <>{formatBrl(diff)} a mais que em {previousLabel}</>
                     ) : diff < 0 ? (
-                      <>{formatBrl(-diff)} a menos que no mês anterior</>
+                      <>{formatBrl(-diff)} a menos que em {previousLabel}</>
                     ) : (
-                      <>Igual ao mês anterior</>
+                      <>Igual a {previousLabel}</>
                     )
                   }
                 />
@@ -189,7 +192,7 @@ export function MonthlyBars({ months, activeKey }: { months: MonthPoint[]; activ
             tickFormatter={(value: number) => formatCompactBrl(value)}
           />
           <Tooltip
-            cursor={{ fill: 'var(--muted)', opacity: 0.6 }}
+            cursor={{ fill: 'var(--muted)', opacity: 0.7, radius: 8 }}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null
               const point = payload[0]?.payload as MonthPoint | undefined
@@ -213,14 +216,14 @@ export function MonthlyBars({ months, activeKey }: { months: MonthPoint[]; activ
               )
             }}
           />
-          <Bar dataKey="income" name="Receitas" fill="var(--income)" radius={[4, 4, 0, 0]} maxBarSize={22} animationDuration={500}>
+          <Bar dataKey="income" name="Receitas" fill="var(--income)" radius={[6, 6, 2, 2]} maxBarSize={20} animationDuration={500}>
             {months.map((point) => (
-              <Cell key={point.key} fillOpacity={point.key === activeKey ? 1 : 0.4} />
+              <Cell key={point.key} fillOpacity={point.key === activeKey ? 1 : 0.35} />
             ))}
           </Bar>
-          <Bar dataKey="expense" name="Gastos" fill="var(--expense)" radius={[4, 4, 0, 0]} maxBarSize={22} animationDuration={500}>
+          <Bar dataKey="expense" name="Gastos" fill="var(--expense)" radius={[6, 6, 2, 2]} maxBarSize={20} animationDuration={500}>
             {months.map((point) => (
-              <Cell key={point.key} fillOpacity={point.key === activeKey ? 1 : 0.4} />
+              <Cell key={point.key} fillOpacity={point.key === activeKey ? 1 : 0.35} />
             ))}
           </Bar>
         </BarChart>
@@ -229,34 +232,53 @@ export function MonthlyBars({ months, activeKey }: { months: MonthPoint[]; activ
   )
 }
 
-export function Sparkline({ values, color }: { values: number[]; color: string }) {
+/**
+  Tendência curta dentro de um indicador. A linha fica no tom discreto; só o mês aberto
+  (o último ponto) ganha a cor do indicador, para o olho saber onde está "agora".
+*/
+export function Sparkline({ values, color, className }: { values: number[]; color: string; className?: string }) {
   const gradientId = useId().replace(/:/g, '')
-  if (values.every((value) => value === 0)) return <div className="h-10" aria-hidden="true" />
+  if (values.every((value) => value === 0)) return <div className={cn('h-10', className)} aria-hidden="true" />
   const data = values.map((value, index) => ({ index, value }))
   const min = Math.min(...values)
   const max = Math.max(...values)
-  const pad = (max - min) * 0.4 || max * 0.1 || 1
-  const low = Math.max(0, min - pad)
-  const high = max + pad * 0.25
+  const pad = (max - min) * 0.35 || Math.abs(max) * 0.1 || 1
+  const low = min >= 0 ? Math.max(0, min - pad) : min - pad
+  const high = max + pad * 0.35
+  const last = data.length - 1
   return (
-    <div className="h-10 w-full" aria-hidden="true">
+    <div className={cn('h-10 w-full', className)} aria-hidden="true">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 2 }}>
+        <AreaChart data={data} margin={{ top: 6, right: 6, left: 2, bottom: 4 }}>
           <YAxis hide domain={[low, high]} />
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.16} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
           <Area
             type="monotone"
             dataKey="value"
-            stroke={color}
-            strokeWidth={1.75}
+            stroke="var(--chart-muted)"
+            strokeWidth={2}
             fill={`url(#${gradientId})`}
             isAnimationActive={false}
-            dot={false}
+            dot={(props: { cx?: number; cy?: number; index?: number }) =>
+              props.index === last && props.cx != null && props.cy != null ? (
+                <circle
+                  key="last"
+                  cx={props.cx}
+                  cy={props.cy}
+                  r={4}
+                  fill={color}
+                  stroke="var(--card)"
+                  strokeWidth={2}
+                />
+              ) : (
+                <g key={props.index} />
+              )
+            }
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -268,11 +290,11 @@ export function CategoryBreakdown({ items }: { items: CategoryShare[] }) {
   const max = items.reduce((peak, item) => Math.max(peak, item.total), 0)
   return (
     <div className="grid gap-5">
-      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+      <div className="flex h-4 gap-1 overflow-hidden rounded-full" aria-hidden="true">
         {items.map((item) => (
           <span
             key={item.categoryId}
-            className="h-full first:rounded-l-full last:rounded-r-full"
+            className="h-full rounded-[3px] first:rounded-l-full last:rounded-r-full"
             style={{ backgroundColor: item.color, width: `${Math.max(item.share * 100, 1.5)}%` }}
             title={`${item.name}: ${formatPercent(item.share)}`}
           />
@@ -287,15 +309,15 @@ export function CategoryBreakdown({ items }: { items: CategoryShare[] }) {
                 <span className="truncate">{item.name}</span>
               </span>
               <span className="flex shrink-0 items-baseline gap-2">
-                <span className="font-medium tabular-nums">{formatBrl(item.total)}</span>
+                <span className="font-semibold tabular-nums">{formatBrl(item.total)}</span>
                 <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">
                   {formatPercent(item.share)}
                 </span>
               </span>
             </div>
-            <div className="h-1.5 rounded-full bg-muted">
+            <div className="h-1.5 rounded-full bg-track">
               <div
-                className="h-full rounded-full transition-[width] duration-500"
+                className="h-full rounded-full transition-[width] duration-700 ease-fluid"
                 style={{ backgroundColor: item.color, width: `${max > 0 ? (item.total / max) * 100 : 0}%` }}
               />
             </div>
@@ -316,7 +338,7 @@ export function DataTable({
   rows: Array<Array<ReactNode>>
 }) {
   return (
-    <div className="max-h-72 overflow-auto rounded-lg border">
+    <div className="max-h-72 overflow-auto rounded-lg ring-1 ring-border">
       <table className="w-full text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="sticky top-0 bg-muted text-xs text-muted-foreground">

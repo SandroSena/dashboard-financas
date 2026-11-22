@@ -1,11 +1,11 @@
 import { cn } from '@/shared/lib/utils'
-import { ArrowRight, ChartColumn, Table2, type LucideIcon } from 'lucide-react'
+import { ChartColumn, Table2, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 export function ViewToggle({ view, onChange }: { view: 'chart' | 'table'; onChange: (view: 'chart' | 'table') => void }) {
   return (
-    <div className="flex rounded-lg bg-muted p-0.5" role="group" aria-label="Modo de visualização">
+    <div className="flex shrink-0 rounded-full bg-muted p-1" role="group" aria-label="Modo de visualização">
       {(
         [
           ['chart', ChartColumn, 'Ver gráfico'],
@@ -20,11 +20,11 @@ export function ViewToggle({ view, onChange }: { view: 'chart' | 'table'; onChan
           title={label}
           onClick={() => onChange(value)}
           className={cn(
-            'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
-            view === value && 'bg-background text-foreground shadow-sm',
+            'flex size-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-[background-color,color] duration-200 hover:text-foreground',
+            view === value && 'bg-card text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.12)]',
           )}
         >
-          <Icon className="size-3.5" />
+          <Icon className="size-4" />
         </button>
       ))}
     </div>
@@ -35,21 +35,18 @@ export function CardLink({ to, children }: { to: string; children: ReactNode }) 
   return (
     <Link
       to={to}
-      className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-brand hover:bg-brand/10"
+      className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft"
     >
       {children}
-      <ArrowRight className="size-3.5" aria-hidden="true" />
     </Link>
   )
 }
 
 export function ChartEmpty({ icon: Icon, message }: { icon: LucideIcon; message: string }) {
   return (
-    <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-center">
-      <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Icon className="size-5" aria-hidden="true" />
-      </span>
-      <p className="max-w-60 text-sm text-muted-foreground">{message}</p>
+    <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-input px-6 text-center">
+      <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
+      <p className="max-w-64 text-sm text-muted-foreground">{message}</p>
     </div>
   )
 }

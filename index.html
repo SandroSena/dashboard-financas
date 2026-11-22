@@ -9,7 +9,7 @@
     <script>
       try {
         const theme = localStorage.getItem('financas-theme')
-        const dark = theme === 'dark' || (!theme && matchMedia('(prefers-color-scheme: dark)').matches)
+        const dark = theme !== 'light'
         if (dark) document.documentElement.classList.add('dark')
       } catch {}
     </script>

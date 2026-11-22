@@ -8,8 +8,7 @@ import { transactionSchema, type TransactionFormValues } from '@/features/lancam
 import { useCreateTransaction, useUpdateTransaction } from '@/features/lancamentos/hooks'
 import { errorMessage } from '@/shared/lib/supabase'
 import { Button } from '@/shared/ui/button'
-import { AppDialog, Field, NativeSelect, TextInput } from '@/shared/ui/dialog'
-import { cn } from '@/shared/lib/utils'
+import { AppDialog, DialogActions, Field, NativeSelect, Segmented, TextInput } from '@/shared/ui/dialog'
 
 export function TransactionDialog({
   open,
@@ -86,17 +85,19 @@ export function TransactionDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={transaction ? 'Editar lançamento' : 'Novo lançamento'}
-      description="Diga onde o dinheiro foi e qual foi o valor."
+      description="Onde o dinheiro foi, quanto e quando."
     >
       <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-        <div role="radiogroup" aria-label="Tipo" className="grid grid-cols-2 gap-2">
-          <KindButton active={kind === 'expense'} onClick={() => selectKind('expense')}>
-            Gasto
-          </KindButton>
-          <KindButton active={kind === 'income'} onClick={() => selectKind('income')}>
-            Receita
-          </KindButton>
-        </div>
+        <Segmented
+          label="Tipo"
+          className="w-full"
+          value={kind}
+          onChange={selectKind}
+          options={[
+            { value: 'expense', label: 'Gasto', tone: 'expense' },
+            { value: 'income', label: 'Receita', tone: 'income' },
+          ]}
+        />
         <Field label="Onde foi" htmlFor="description" error={form.formState.errors.description?.message}>
           <TextInput
             id="description"
@@ -106,13 +107,19 @@ export function TransactionDialog({
           />
         </Field>
         <Field label="Valor" htmlFor="amount" error={form.formState.errors.amount?.message}>
-          <TextInput
-            id="amount"
-            inputMode="decimal"
-            placeholder="0,00"
-            aria-invalid={Boolean(form.formState.errors.amount)}
-            {...form.register('amount')}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-display text-lg text-muted-foreground">
+              R$
+            </span>
+            <TextInput
+              id="amount"
+              inputMode="decimal"
+              placeholder="0,00"
+              className="numeral h-14 pl-12 text-2xl font-semibold"
+              aria-invalid={Boolean(form.formState.errors.amount)}
+              {...form.register('amount')}
+            />
+          </div>
         </Field>
         <Field label="Categoria" htmlFor="category" error={form.formState.errors.categoryId?.message}>
           {options.length === 0 ? (
@@ -142,40 +149,15 @@ export function TransactionDialog({
             {...form.register('occurredOn')}
           />
         </Field>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+        <DialogActions>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
             Cancelar
           </Button>
           <Button type="submit" disabled={pending || options.length === 0}>
-            {pending ? 'Salvando...' : 'Salvar'}
+            {pending ? 'Salvando...' : transaction ? 'Salvar alterações' : 'Adicionar lançamento'}
           </Button>
-        </div>
+        </DialogActions>
       </form>
     </AppDialog>
-  )
-}
-
-function KindButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: string
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={active}
-      onClick={onClick}
-      className={cn(
-        'h-10 rounded-lg border text-sm font-medium',
-        active ? 'border-foreground bg-foreground text-background' : 'border-input hover:bg-accent',
-      )}
-    >
-      {children}
-    </button>
   )
 }

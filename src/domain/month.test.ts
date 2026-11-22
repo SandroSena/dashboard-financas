@@ -5,7 +5,9 @@ import {
   isIsoDate,
   isMonthKey,
   monthBounds,
+  capitalize,
   monthLabel,
+  monthName,
   shiftMonth,
 } from '@/domain/month'
 import { describe, expect, it } from 'vitest'
@@ -43,5 +45,17 @@ describe('mês', () => {
     expect(isIsoDate('2026-11-17')).toBe(true)
     expect(defaultDateForMonth('2026-11', new Date(2026, 10, 17))).toBe('2026-11-17')
     expect(defaultDateForMonth('2026-10', new Date(2026, 10, 17))).toBe('2026-10-01')
+  })
+})
+
+describe('monthName e capitalize', () => {
+  it('devolve só o nome do mês, em minúsculas', () => {
+    expect(monthName('2026-11')).toBe('novembro')
+    expect(monthName('2026-03')).toBe('março')
+  })
+
+  it('deixa só a primeira letra maiúscula', () => {
+    expect(capitalize('outubro')).toBe('Outubro')
+    expect(capitalize('')).toBe('')
   })
 })

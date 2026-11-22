@@ -39,7 +39,8 @@ src/
     categorias/   página, formulário e acesso ao Supabase
     lancamentos/  idem
     orcamentos/   idem
-    painel/       dashboard principal (model, insights, charts, components/)
+    painel/       dashboard principal (model, insights, charts, components/ com
+                  destaque do mês, indicadores, gráficos e listas)
       layouts/    variações experimentais do painel (Comando, Fluxo, Atlas)
   shared/       o que mais de uma feature usa: ui/ (botão, card, diálogo),
                 components/, hooks/, lib/ (Supabase, React Query) e theme/
@@ -47,6 +48,10 @@ supabase/migrations/   SQL do banco, em ordem de data
 ```
 
 Cada feature segue o mesmo formato: `*-page.tsx` (tela), `hooks.ts` (React Query), `api/*-repository.ts` (Supabase) e `schema.ts` (validação do formulário com Zod). Uma feature só importa de `domain/`, `shared/` ou de outra feature quando precisa de algo dela (ex.: o painel usa o formulário de lançamento).
+
+## Visual
+
+Tema escuro por padrão, com tema claro. Cores vivas da escala do Tailwind (verde para receitas, rosa para gastos, âmbar para alerta, teal para a marca), títulos em Bricolage Grotesque e texto em Figtree. Tudo fica em `src/index.css`; detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md#visual-cores-fontes-e-peças).
 
 ## Scripts
 

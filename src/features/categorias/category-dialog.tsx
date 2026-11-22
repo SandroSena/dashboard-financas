@@ -5,7 +5,7 @@ import { categorySchema, type CategoryFormValues } from '@/features/categorias/s
 import { errorMessage } from '@/shared/lib/supabase'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
-import { AppDialog, Field, TextInput } from '@/shared/ui/dialog'
+import { AppDialog, DialogActions, Field, Segmented, TextInput } from '@/shared/ui/dialog'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -57,39 +57,23 @@ export function CategoryDialog({
     >
       <form className="grid gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         {category ? null : (
-          <div role="radiogroup" aria-label="Tipo" className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={kind === 'expense'}
-              className={cn(
-                'h-10 rounded-lg border text-sm font-medium',
-                kind === 'expense' ? 'border-foreground bg-foreground text-background' : 'border-input',
-              )}
-              onClick={() => form.setValue('kind', 'expense')}
-            >
-              Gasto
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={kind === 'income'}
-              className={cn(
-                'h-10 rounded-lg border text-sm font-medium',
-                kind === 'income' ? 'border-foreground bg-foreground text-background' : 'border-input',
-              )}
-              onClick={() => form.setValue('kind', 'income')}
-            >
-              Receita
-            </button>
-          </div>
+          <Segmented
+            label="Tipo"
+            className="w-full"
+            value={kind}
+            onChange={(next) => form.setValue('kind', next)}
+            options={[
+              { value: 'expense', label: 'Gasto', tone: 'expense' },
+              { value: 'income', label: 'Receita', tone: 'income' },
+            ]}
+          />
         )}
         <Field label="Nome" htmlFor="category-name" error={form.formState.errors.name?.message}>
           <TextInput id="category-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} />
         </Field>
         <fieldset className="grid gap-2">
           <legend className="text-sm font-medium">Cor</legend>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {CATEGORY_COLORS.map((item) => (
               <button
                 key={item}
@@ -97,8 +81,8 @@ export function CategoryDialog({
                 aria-label={`Cor ${item}`}
                 aria-pressed={color === item}
                 className={cn(
-                  'size-8 rounded-full border-2',
-                  color === item ? 'border-foreground' : 'border-transparent',
+                  'size-9 cursor-pointer rounded-full ring-offset-2 ring-offset-popover transition-[box-shadow,transform] duration-200 ease-fluid hover:scale-110',
+                  color === item && 'ring-2 ring-foreground',
                 )}
                 style={{ backgroundColor: item }}
                 onClick={() => form.setValue('color', item, { shouldValidate: true })}
@@ -109,14 +93,14 @@ export function CategoryDialog({
             <p className="text-sm text-destructive">{form.formState.errors.color.message}</p>
           ) : null}
         </fieldset>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+        <DialogActions>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
             Cancelar
           </Button>
           <Button type="submit" disabled={pending}>
-            {pending ? 'Salvando...' : 'Salvar'}
+            {pending ? 'Salvando...' : category ? 'Salvar alterações' : 'Criar categoria'}
           </Button>
-        </div>
+        </DialogActions>
       </form>
     </AppDialog>
   )
