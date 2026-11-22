@@ -32,10 +32,10 @@ export function CategoriesPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <PageHeader
         title="Categorias"
-        description="Separe gastos e receitas. O tipo não muda depois, para não misturar o histórico."
+        description="Como vocês separam o que entra e o que sai. O tipo de uma categoria não muda depois, para não misturar o histórico."
         action={
           <Button
             onClick={() => {
@@ -44,7 +44,7 @@ export function CategoriesPage() {
             }}
           >
             <Plus className="size-4" />
-            Nova
+            Nova categoria
           </Button>
         }
       />
@@ -66,10 +66,16 @@ export function CategoriesPage() {
               description="Crie uma categoria para classificar os lançamentos."
             />
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {categories.map((category) => (
-                <li key={category.id} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
-                  <span className="size-3 rounded-full" style={{ backgroundColor: category.color }} />
+                <li key={category.id} className="group flex items-center gap-3 rounded-xl bg-card py-2 pr-2 pl-3">
+                  <span
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full font-display text-sm font-semibold"
+                    style={{ backgroundColor: `${category.color}24`, color: category.color }}
+                    aria-hidden="true"
+                  >
+                    {category.name.charAt(0).toUpperCase()}
+                  </span>
                   <p className="min-w-0 flex-1 truncate font-medium">{category.name}</p>
                   <Button
                     variant="ghost"
@@ -85,6 +91,7 @@ export function CategoriesPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="hover:text-destructive"
                     aria-label={`Excluir ${category.name}`}
                     onClick={() => setRemoving(category)}
                   >

@@ -4,11 +4,11 @@ export function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100
 }
 
+// Criar um Intl.NumberFormat é caro; o painel formata centenas de valores por render.
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
 export function formatBrl(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(roundMoney(value))
+  return brl.format(roundMoney(value))
 }
 
 export function formatAmountInput(value: number): string {

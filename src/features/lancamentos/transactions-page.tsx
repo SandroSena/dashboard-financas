@@ -1,17 +1,18 @@
-import { formatShortDate } from '@/domain/month'
-import { FALLBACK_COLOR, totalByKind } from '@/domain/summary'
+import { roundMoney } from '@/domain/money'
+import { totalByKind } from '@/domain/summary'
 import type { Kind, Transaction } from '@/domain/types'
 import { useCategories } from '@/features/categorias/hooks'
 import { useDeleteTransaction, useTransactions } from '@/features/lancamentos/hooks'
 import { TransactionDialog } from '@/features/lancamentos/transaction-dialog'
+import { TransactionGroups } from '@/features/lancamentos/transaction-groups'
+import { useQuickAdd } from '@/features/lancamentos/quick-add'
 import { useMonthParam } from '@/shared/hooks/use-month-param'
 import { EmptyState, LoadingBlock, QueryError } from '@/shared/components/feedback'
 import { MoneyText } from '@/shared/components/money-text'
 import { MonthSwitcher, PageHeader } from '@/shared/components/page-header'
 import { errorMessage } from '@/shared/lib/supabase'
-import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
-import { ConfirmDialog, NativeSelect } from '@/shared/ui/dialog'
+import { ConfirmDialog, NativeSelect, Segmented } from '@/shared/ui/dialog'
 import { Pencil, Plus, Receipt, Trash } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -28,6 +29,7 @@ export function TransactionsPage() {
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [removing, setRemoving] = useState<Transaction | null>(null)
   const remove = useDeleteTransaction(month)
+  const quickAdd = useQuickAdd()
 
   const categories = categoriesQuery.data ?? []
   const transactions = transactionsQuery.data ?? []
@@ -37,7 +39,6 @@ export function TransactionsPage() {
     if (categoryId !== 'all' && transaction.categoryId !== categoryId) return false
     return true
   })
-  const names = new Map(categories.map((category) => [category.id, category]))
 
   async function confirmRemove() {
     if (!removing) return
@@ -51,51 +52,27 @@ export function TransactionsPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <PageHeader
         title="Lançamentos"
-        description="Registre onde o dinheiro foi e o valor de cada movimento."
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <MonthSwitcher />
-            <Button
-              onClick={() => {
-                setEditing(null)
-                setDialogOpen(true)
-              }}
-            >
-              <Plus className="size-4" />
-              Novo
-            </Button>
-          </div>
-        }
+        description="Tudo o que entrou e saiu no mês, dia a dia."
+        action={<MonthSwitcher />}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex rounded-lg bg-muted p-1">
-          {(
-            [
-              ['all', 'Todos'],
-              ['expense', 'Gastos'],
-              ['income', 'Receitas'],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={cn(
-                'h-8 rounded-md px-3 text-sm',
-                kind === value ? 'bg-background font-medium shadow-sm' : 'text-muted-foreground',
-              )}
-              onClick={() => {
-                setKind(value)
-                setCategoryId('all')
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Segmented
+          label="Tipo de lançamento"
+          value={kind}
+          onChange={(value) => {
+            setKind(value)
+            setCategoryId('all')
+          }}
+          options={[
+            { value: 'all', label: 'Todos' },
+            { value: 'expense', label: 'Gastos', tone: 'expense' },
+            { value: 'income', label: 'Receitas', tone: 'income' },
+          ]}
+        />
         <NativeSelect
           aria-label="Filtrar por categoria"
           className="sm:max-w-xs"
@@ -132,70 +109,63 @@ export function TransactionsPage() {
           }
           action={
             transactions.length === 0 ? (
-              <Button
-                onClick={() => {
-                  setEditing(null)
-                  setDialogOpen(true)
-                }}
-              >
-                Adicionar lançamento
+              <Button disabled={!quickAdd.ready} onClick={quickAdd.open}>
+                <Plus className="size-4" />
+                Novo lançamento
               </Button>
             ) : null
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-card">
-          <ul>
-            {filtered.map((transaction) => {
-              const category = names.get(transaction.categoryId)
-              return (
-                <li key={transaction.id} className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-                  <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: category?.color ?? FALLBACK_COLOR }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{transaction.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {category?.name ?? 'Categoria'} · {formatShortDate(transaction.occurredOn)}
-                    </p>
-                  </div>
-                  <MoneyText
-                    value={transaction.amount}
-                    tone={transaction.kind === 'income' ? 'income' : 'expense'}
-                    className="font-medium"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Editar ${transaction.description}`}
-                    onClick={() => {
-                      setEditing(transaction)
-                      setDialogOpen(true)
-                    }}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Excluir ${transaction.description}`}
-                    onClick={() => setRemoving(transaction)}
-                  >
-                    <Trash className="size-4" />
-                  </Button>
-                </li>
-              )
-            })}
-          </ul>
-          <div className="flex flex-wrap justify-end gap-4 border-t bg-muted/40 px-4 py-3 text-sm">
-            <span>
-              Gastos <MoneyText value={totalByKind(filtered, 'expense')} tone="expense" className="font-medium" />
-            </span>
-            <span>
-              Receitas <MoneyText value={totalByKind(filtered, 'income')} tone="income" className="font-medium" />
-            </span>
-          </div>
+        <div className="grid gap-6">
+          <dl className="grid grid-cols-3 gap-3">
+            {(
+              [
+                ['Gastos', totalByKind(filtered, 'expense'), 'expense'],
+                ['Receitas', totalByKind(filtered, 'income'), 'income'],
+                ['Saldo', roundMoney(totalByKind(filtered, 'income') - totalByKind(filtered, 'expense')), 'balance'],
+              ] as const
+            ).map(([label, value, tone]) => (
+              <div key={label} className="surface grid min-w-0 gap-1 px-4 py-3 sm:px-5 sm:py-4">
+                <dt className="eyebrow truncate">{label}</dt>
+                <dd className="min-w-0 truncate">
+                  <MoneyText value={value} tone={tone} className="figure text-base font-semibold sm:text-xl" />
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="-mt-3 text-xs text-muted-foreground">
+            {filtered.length} {filtered.length === 1 ? 'lançamento' : 'lançamentos'} na lista
+          </p>
+          <TransactionGroups
+            transactions={filtered}
+            categories={categories}
+            renderActions={(transaction) => (
+              <div className="-mr-2 flex shrink-0 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9"
+                  aria-label={`Editar ${transaction.description}`}
+                  onClick={() => {
+                    setEditing(transaction)
+                    setDialogOpen(true)
+                  }}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 hover:text-destructive"
+                  aria-label={`Excluir ${transaction.description}`}
+                  onClick={() => setRemoving(transaction)}
+                >
+                  <Trash className="size-4" />
+                </Button>
+              </div>
+            )}
+          />
         </div>
       )}
 

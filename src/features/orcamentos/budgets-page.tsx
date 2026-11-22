@@ -6,12 +6,14 @@ import { useTransactions } from '@/features/lancamentos/hooks'
 import { useBudgets, useDeleteBudget, useSaveBudget } from '@/features/orcamentos/hooks'
 import { useMonthParam } from '@/shared/hooks/use-month-param'
 import { BudgetMeter } from '@/features/orcamentos/budget-meter'
-import { LoadingBlock, QueryError } from '@/shared/components/feedback'
+import { EmptyState, LoadingBlock, QueryError } from '@/shared/components/feedback'
 import { MoneyText } from '@/shared/components/money-text'
 import { MonthSwitcher, PageHeader } from '@/shared/components/page-header'
 import { errorMessage } from '@/shared/lib/supabase'
+import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { TextInput } from '@/shared/ui/dialog'
+import { Target } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -25,10 +27,10 @@ export function BudgetsPage() {
   const expenseCategories = (categoriesQuery.data ?? []).filter((category) => category.kind === 'expense')
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <PageHeader
         title="Orçamentos"
-        description="Defina quanto pode sair em cada categoria. Deixe em branco para tirar a meta."
+        description="Quanto pode sair em cada categoria neste mês. Apague o valor para tirar a meta."
         action={<MonthSwitcher />}
       />
       {isLoading ? (
@@ -43,9 +45,13 @@ export function BudgetsPage() {
           }}
         />
       ) : expenseCategories.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Crie uma categoria de gasto para definir uma meta.</p>
+        <EmptyState
+          icon={<Target className="size-5" />}
+          title="Nenhuma categoria de gasto"
+          description="Crie uma categoria de gasto em Categorias para definir uma meta."
+        />
       ) : (
-        <ul className="grid gap-3">
+        <ul className="grid gap-2">
           {expenseCategories.map((category) => {
             const budget = (budgetsQuery.data ?? []).find((item) => item.categoryId === category.id)
             return (
@@ -107,29 +113,54 @@ function BudgetRow({
   }
 
   return (
-    <li className="grid gap-4 rounded-xl border bg-card p-4 md:grid-cols-[1fr_180px_auto] md:items-center">
+    <li className="grid gap-4 rounded-xl bg-card p-5 md:grid-cols-[1fr_220px] md:items-center md:gap-8">
       <div className="grid gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="flex items-center gap-2 font-medium">
-            <span className="size-2.5 rounded-full" style={{ backgroundColor: category.color }} />
-            {category.name}
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="flex min-w-0 items-center gap-2.5 font-semibold">
+            <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: category.color }} />
+            <span className="truncate">{category.name}</span>
           </p>
-          <p className="text-sm text-muted-foreground">
-            Gasto <MoneyText value={spent} />
+          <p className="shrink-0 text-sm text-muted-foreground">
+            Gasto <MoneyText value={spent} className="font-semibold text-foreground" />
           </p>
         </div>
-        {progress ? <BudgetMeter percent={progress.percent} status={progress.status} /> : null}
+        {progress ? (
+          <BudgetMeter percent={progress.percent} status={progress.status} />
+        ) : (
+          <p className="text-xs text-muted-foreground">Sem meta. Escreva um valor para começar a acompanhar.</p>
+        )}
       </div>
-      <TextInput
-        aria-label={`Meta de ${category.name}`}
-        inputMode="decimal"
-        placeholder="0,00"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-      />
-      <Button onClick={() => void onSave()} disabled={!dirty || pending}>
-        {pending ? 'Salvando...' : removing ? 'Remover' : 'Salvar'}
-      </Button>
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (dirty && !pending) void onSave()
+        }}
+      >
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-muted-foreground">
+            R$
+          </span>
+          <TextInput
+            aria-label={`Meta de ${category.name}`}
+            inputMode="decimal"
+            placeholder="0,00"
+            className="pl-10 tabular-nums"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+          />
+        </div>
+        <Button
+          type="submit"
+          variant={removing ? 'outline' : 'default'}
+          className={cn(!dirty && 'invisible')}
+          disabled={!dirty || pending}
+          aria-hidden={!dirty}
+          tabIndex={dirty ? 0 : -1}
+        >
+          {pending ? 'Salvando...' : removing ? 'Remover' : 'Salvar'}
+        </Button>
+      </form>
     </li>
   )
 }

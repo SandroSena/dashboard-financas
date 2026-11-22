@@ -30,8 +30,16 @@ export function monthBounds(monthKey: string): { start: string; end: string } {
 }
 
 export function monthLabel(monthKey: string): string {
-  const label = format(parseMonthStart(monthKey), "MMMM 'de' yyyy", { locale: ptBR })
-  return label.charAt(0).toUpperCase() + label.slice(1)
+  return capitalize(format(parseMonthStart(monthKey), "MMMM 'de' yyyy", { locale: ptBR }))
+}
+
+/** Só o nome do mês, em minúsculas: "novembro". */
+export function monthName(monthKey: string): string {
+  return format(parseMonthStart(monthKey), 'MMMM', { locale: ptBR })
+}
+
+export function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 export function daysInMonth(monthKey: string): string[] {

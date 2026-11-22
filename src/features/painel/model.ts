@@ -1,4 +1,4 @@
-import { daysInMonth, monthBounds, shiftMonth } from '@/domain/month'
+import { capitalize, daysInMonth, monthBounds, shiftMonth } from '@/domain/month'
 import { roundMoney, toCents } from '@/domain/money'
 import {
   FALLBACK_COLOR,
@@ -175,7 +175,7 @@ function monthPoint(monthKey: string, history: Transaction[]): MonthPoint {
 
 function shortMonth(monthKey: string): string {
   const label = format(parse(`${monthKey}-01`, 'yyyy-MM-dd', new Date(2000, 0, 1)), 'MMM', { locale: ptBR }).replace('.', '')
-  return label.charAt(0).toUpperCase() + label.slice(1)
+  return capitalize(label)
 }
 
 function dailyFlows(transactions: Transaction[], month: string): { daily: DayFlow[]; flow: FlowPoint[] } {

@@ -1,9 +1,11 @@
 import { formatBrl } from '@/domain/money'
+import { capitalize } from '@/domain/month'
 import { DataTable, LegendItem, MonthlyBars, SpendingPace } from '@/features/painel/charts'
 import type { DashboardInsights } from '@/features/painel/insights'
 import type { DashboardModel } from '@/features/painel/model'
 import { ChartEmpty, ViewToggle } from '@/features/painel/components/card-parts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
+import { cn } from '@/shared/lib/utils'
 import { CalendarDays, Flame } from 'lucide-react'
 import { useState } from 'react'
 
@@ -11,10 +13,12 @@ export function PaceCard({
   model,
   insights,
   previousLabel,
+  className,
 }: {
   model: DashboardModel
   insights: DashboardInsights
   previousLabel: string
+  className?: string
 }) {
   const [view, setView] = useState<'chart' | 'table'>('chart')
   const diff =
@@ -23,38 +27,36 @@ export function PaceCard({
       : null
 
   return (
-    <Card className="lg:col-span-2">
+    <Card className={cn('flex flex-col', className)}>
       <CardHeader className="flex-row items-start justify-between gap-3">
         <div>
           <CardTitle>Ritmo de gastos</CardTitle>
           <CardDescription>
             {diff === null
-              ? 'Quanto já saiu, dia a dia, somado ao longo do mês.'
+              ? 'Quanto já saiu, somado dia a dia ao longo do mês.'
               : diff > 0
-                ? `Até hoje você gastou ${formatBrl(diff)} a mais que em ${previousLabel}, no mesmo ponto do mês.`
+                ? `Até aqui, ${formatBrl(diff)} a mais que no mesmo ponto de ${previousLabel}.`
                 : diff < 0
-                  ? `Até hoje você gastou ${formatBrl(-diff)} a menos que em ${previousLabel}, no mesmo ponto do mês.`
+                  ? `Até aqui, ${formatBrl(-diff)} a menos que no mesmo ponto de ${previousLabel}.`
                   : `Mesmo ritmo de ${previousLabel}.`}
           </CardDescription>
         </div>
         <ViewToggle view={view} onChange={setView} />
       </CardHeader>
-      <CardContent className="grid gap-3">
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
+      <CardContent className="grid flex-1 content-start gap-4">
+        <div className="flex flex-wrap gap-x-5 gap-y-1">
           <LegendItem color="var(--expense)" label="Este mês" />
-          {insights.projectedExpense !== null ? (
-            <LegendItem color="var(--expense)" label="Projeção" dashed />
-          ) : null}
-          {insights.previous ? <LegendItem color="var(--chart-muted)" label={previousLabel} /> : null}
+          {insights.projectedExpense !== null ? <LegendItem color="var(--expense)" label="Projeção" dashed /> : null}
+          {insights.previous ? <LegendItem color="var(--chart-muted)" label={capitalize(previousLabel)} /> : null}
         </div>
         {model.expense === 0 && !insights.previous ? (
           <ChartEmpty icon={Flame} message="O ritmo aparece assim que o primeiro gasto for lançado." />
         ) : view === 'chart' ? (
-          <SpendingPace points={insights.pace} totalDays={insights.totalDays} />
+          <SpendingPace points={insights.pace} totalDays={insights.totalDays} previousLabel={previousLabel} />
         ) : (
           <DataTable
             caption="Gasto acumulado por dia"
-            columns={['Dia', 'Gasto no dia', 'Acumulado', previousLabel]}
+            columns={['Dia', 'Gasto no dia', 'Acumulado', capitalize(previousLabel)]}
             rows={insights.pace.map((point, index) => [
               point.day,
               formatBrl(model.days[index]?.total ?? 0),
@@ -68,20 +70,20 @@ export function PaceCard({
   )
 }
 
-export function MonthlyCard({ model }: { model: DashboardModel }) {
+export function MonthlyCard({ model, className }: { model: DashboardModel; className?: string }) {
   const [view, setView] = useState<'chart' | 'table'>('chart')
   const hasData = model.months.some((point) => point.income > 0 || point.expense > 0)
   return (
-    <Card className="lg:col-span-2">
+    <Card className={cn('flex flex-col', className)}>
       <CardHeader className="flex-row items-start justify-between gap-3">
         <div>
           <CardTitle>Últimos 6 meses</CardTitle>
-          <CardDescription>Receitas e gastos lado a lado; o mês escolhido fica em destaque.</CardDescription>
+          <CardDescription>Receitas e gastos lado a lado. O mês aberto fica em destaque.</CardDescription>
         </div>
         <ViewToggle view={view} onChange={setView} />
       </CardHeader>
-      <CardContent className="grid gap-3">
-        <div className="flex gap-4">
+      <CardContent className="grid flex-1 content-start gap-4">
+        <div className="flex gap-5">
           <LegendItem color="var(--income)" label="Receitas" />
           <LegendItem color="var(--expense)" label="Gastos" />
         </div>
@@ -97,7 +99,9 @@ export function MonthlyCard({ model }: { model: DashboardModel }) {
               point.label,
               formatBrl(point.income),
               formatBrl(point.expense),
-              <span key="saldo" className={point.balance >= 0 ? 'text-income' : 'text-expense'}>{formatBrl(point.balance)}</span>,
+              <span key="saldo" className={point.balance >= 0 ? 'text-income' : 'text-expense'}>
+                {formatBrl(point.balance)}
+              </span>,
             ])}
           />
         )}
