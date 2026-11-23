@@ -4,8 +4,8 @@ export const credentialsSchema = z.object({
   email: z
     .string()
     .trim()
-    .min(1, 'Informe o e-mail.')
-    .refine((value) => z.email().safeParse(value).success, 'Informe um e-mail válido.'),
+    .min(1, 'Informem o e-mail.')
+    .refine((value) => z.email().safeParse(value).success, 'Informem um e-mail válido.'),
   password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.'),
 })
 

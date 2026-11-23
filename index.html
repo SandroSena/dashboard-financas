@@ -6,13 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Dashboard de finanças pessoais: gastos, receitas, saldo e orçamento do mês." />
     <title>Finanças</title>
-    <script>
-      try {
-        const theme = localStorage.getItem('financas-theme')
-        const dark = theme !== 'light'
-        if (dark) document.documentElement.classList.add('dark')
-      } catch {}
-    </script>
+    <!-- Script clássico (sem type=module), bloqueante, para aplicar o tema antes do app e não piscar.
+         Fica em public/ e não inline, para a CSP não precisar de 'unsafe-inline' em script-src. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

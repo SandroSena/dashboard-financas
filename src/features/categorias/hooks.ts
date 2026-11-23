@@ -36,6 +36,12 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: deleteCategory,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.categories }),
+    // A FK de budgets é ON DELETE CASCADE: excluir a categoria apaga as metas dela,
+    // então o cache de orçamentos (de todos os meses) também fica velho.
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.budgetsAll }),
+      ]),
   })
 }

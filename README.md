@@ -18,13 +18,17 @@ Preencha no `.env`:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY` (chave anon, nunca a service role)
 
-No SQL Editor do Supabase, rode [supabase/migrations/20261117120000_init.sql](supabase/migrations/20261117120000_init.sql). O script cria as tabelas, a RLS e as categorias padrão de cada conta nova.
+No SQL Editor do Supabase, rode as migrações nesta ordem, uma de cada vez:
+
+1. [supabase/migrations/20261117120000_init.sql](supabase/migrations/20261117120000_init.sql): cria as tabelas, a RLS e as categorias padrão de cada conta nova.
+2. [supabase/migrations/20261117200000_card_games.sql](supabase/migrations/20261117200000_card_games.sql): inclui a categoria Card Games nas contas novas e nas que já existem.
+3. [supabase/migrations/20261123120000_hardening.sql](supabase/migrations/20261123120000_hardening.sql): tira os privilégios do papel `anon` e fixa o `search_path` das funções. Como desfazer está no comentário do topo do arquivo.
 
 ```bash
 npm run dev
 ```
 
-Se o projeto exigir confirmação de e-mail, a pessoa só entra depois de abrir o link. Para testar na hora, desative “Confirm email” em Authentication.
+Se o projeto exigir confirmação de e-mail, a pessoa só entra depois de abrir o link. Para testar na hora, desative “Confirm email” em Authentication, **só num projeto Supabase de teste**. Em produção, deixe “Confirm email” ligado: sem ele, qualquer pessoa cria conta com um e-mail que não é dela.
 
 ## Estrutura
 
@@ -39,11 +43,12 @@ src/
     categorias/   página, formulário e acesso ao Supabase
     lancamentos/  idem
     orcamentos/   idem
-    painel/       dashboard principal (model, insights, charts, components/ com
-                  destaque do mês, indicadores, gráficos e listas)
-      layouts/    variações experimentais do painel (Comando, Fluxo, Atlas)
-  shared/       o que mais de uma feature usa: ui/ (botão, card, diálogo),
-                components/, hooks/, lib/ (Supabase, React Query) e theme/
+    painel/       dashboard principal: hooks.ts, regras puras (model, insights,
+                  ruler, calendar, detail, params, links), charts/ (único lugar
+                  com Recharts) e components/ (destaque, régua, cards e folhas)
+  shared/       o que mais de uma feature usa: ui/ (primitivas), components/,
+                hooks/ (estado na URL, movimento reduzido), lib/ (Supabase,
+                paginação, React Query) e theme/
 supabase/migrations/   SQL do banco, em ordem de data
 ```
 
@@ -51,7 +56,7 @@ Cada feature segue o mesmo formato: `*-page.tsx` (tela), `hooks.ts` (React Query
 
 ## Visual
 
-Tema escuro por padrão, com tema claro. Cores vivas da escala do Tailwind (verde para receitas, rosa para gastos, âmbar para alerta, teal para a marca), títulos em Bricolage Grotesque e texto em Figtree. Tudo fica em `src/index.css`; detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md#visual-cores-fontes-e-peças).
+Design system "Régua": tema escuro por padrão, com tema claro; verde para receitas, rosa para gastos, âmbar para alerta e teal para a marca; títulos em Bricolage Grotesque e texto em Figtree. Os tokens ficam em `src/index.css`; as decisões em [docs/design/design-system.md](docs/design/design-system.md) e o resumo em [docs/ARQUITETURA.md](docs/ARQUITETURA.md#visual).
 
 ## Scripts
 

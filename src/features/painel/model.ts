@@ -1,71 +1,39 @@
 import { capitalize, daysInMonth, monthBounds, shiftMonth } from '@/domain/month'
-import { roundMoney, toCents } from '@/domain/money'
-import {
-  FALLBACK_COLOR,
-  budgetUsage,
-  expensesByDay,
-  overallBudget,
-  totalByKind,
-  totalsByCategory,
-  type BudgetUsage,
-  type CategorySlice,
-  type DayTotal,
-} from '@/domain/summary'
-import type { Budget, Category, Transaction } from '@/domain/types'
-import { format, parse } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { toCents } from '@/domain/money'
+import { FALLBACK_COLOR, budgetStatus, type BudgetProgress, type BudgetUsage, type CategorySlice } from '@/domain/summary'
+import type { Budget, Category, Kind, Transaction } from '@/domain/types'
+import { MAX_WINDOW } from '@/features/painel/params'
 
-const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const OTHER_ID = '__outros__'
-const HISTORY_MONTHS = 6
+/*
+  Modelo do painel: tudo o que a tela mostra sobre o mês aberto, calculado uma vez a partir
+  de categorias, lançamentos (12 meses) e metas. Função pura, sem React.
+
+  Dinheiro: toda soma é feita em centavos inteiros (`toCents`) e só vira reais na saída,
+  porque os componentes (`Amount`, `formatBrl`) recebem reais.
+*/
+
+const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 export type MonthPoint = {
   key: string
+  /** "Set" */
   label: string
   income: number
   expense: number
   balance: number
+  /** Número de lançamentos (0 = mês sem movimento). */
+  count: number
 }
 
-export type DayFlow = {
-  day: number
-  income: number
-  expense: number
-  net: number
-}
-
-export type FlowPoint = {
-  day: number
-  income: number
-  expense: number
-  balance: number
-}
-
-export type WeekdayPoint = {
-  label: string
-  income: number
-  expense: number
-}
-
-export type ScatterPoint = {
-  day: number
-  amount: number
-  name: string
-  category: string
-  fill: string
-}
-
-export type CalendarCell = {
+export type DayStat = {
   date: string
   day: number
-  total: number
-  intensity: number
-}
-
-export type StackSeries = {
-  id: string
-  name: string
-  color: string
+  expense: number
+  income: number
+  expenseCount: number
+  incomeCount: number
+  /** Maior gasto do dia (para a dica do calendário). */
+  topExpense: Transaction | null
 }
 
 export type DashboardModel = {
@@ -73,6 +41,7 @@ export type DashboardModel = {
   income: number
   expense: number
   balance: number
+  /** Parte da receita que sobrou, em pontos inteiros; `null` sem receita. */
   savingsPercent: number | null
   incomeCount: number
   expenseCount: number
@@ -80,215 +49,202 @@ export type DashboardModel = {
   largestExpense: Transaction | null
   expenseSlices: CategorySlice[]
   incomeSlices: CategorySlice[]
-  days: DayTotal[]
-  daily: DayFlow[]
-  flow: FlowPoint[]
-  weekdays: WeekdayPoint[]
+  days: DayStat[]
+  /** Os 12 meses que terminam no mês aberto, do mais antigo ao aberto. */
   months: MonthPoint[]
-  stackSeries: StackSeries[]
-  stackPoints: Array<Record<string, string | number>>
   usage: BudgetUsage[]
-  overall: ReturnType<typeof overallBudget>
-  calendar: CalendarCell[]
-  calendarOffset: number
-  scatter: ScatterPoint[]
+  overall: BudgetProgress & { limit: number; spent: number }
+  /** Lançamentos do mês, do mais recente ao mais antigo. */
+  transactions: Transaction[]
   recent: Transaction[]
-  categoryName: Map<string, string>
+  categoryById: ReadonlyMap<string, Category>
+  /** Lançamentos de cada mês (`AAAA-MM`) do histórico carregado. */
+  byMonth: ReadonlyMap<string, Transaction[]>
 }
 
-export function historyBounds(month: string): { start: string; end: string } {
+/** Intervalo buscado no banco: `months` meses terminando no mês aberto (AC-10). */
+export function historyBounds(month: string, months: number = MAX_WINDOW): { start: string; end: string } {
   return {
-    start: `${shiftMonth(month, -(HISTORY_MONTHS - 1))}-01`,
+    start: `${shiftMonth(month, -(months - 1))}-01`,
     end: monthBounds(month).end,
   }
 }
 
+/** "2026-09" → "Set". */
+export function shortMonthLabel(monthKey: string): string {
+  return MONTH_SHORT[Number(monthKey.slice(5, 7)) - 1] ?? capitalize(monthKey)
+}
+
+/** Agrupa o histórico por mês numa passada só (base de todas as contas por mês). */
+export function groupByMonth(history: readonly Transaction[]): Map<string, Transaction[]> {
+  const byMonth = new Map<string, Transaction[]>()
+  for (const transaction of history) {
+    const key = transaction.occurredOn.slice(0, 7)
+    const bucket = byMonth.get(key)
+    if (bucket) bucket.push(transaction)
+    else byMonth.set(key, [transaction])
+  }
+  return byMonth
+}
+
+/** Soma em centavos de um tipo. */
+export function sumCents(transactions: readonly Transaction[], kind: Kind): number {
+  let total = 0
+  for (const transaction of transactions) if (transaction.kind === kind) total += toCents(transaction.amount)
+  return total
+}
+
+/** Totais por categoria de um tipo, em centavos. */
+export function centsByCategory(transactions: readonly Transaction[], kind: Kind): Map<string, number> {
+  const totals = new Map<string, number>()
+  for (const transaction of transactions) {
+    if (transaction.kind !== kind) continue
+    totals.set(transaction.categoryId, (totals.get(transaction.categoryId) ?? 0) + toCents(transaction.amount))
+  }
+  return totals
+}
+
+export function monthPoint(monthKey: string, items: readonly Transaction[]): MonthPoint {
+  const income = sumCents(items, 'income')
+  const expense = sumCents(items, 'expense')
+  return {
+    key: monthKey,
+    label: shortMonthLabel(monthKey),
+    income: income / 100,
+    expense: expense / 100,
+    balance: (income - expense) / 100,
+    count: items.length,
+  }
+}
+
+function slicesOf(
+  totals: Map<string, number>,
+  categoryById: ReadonlyMap<string, Category>,
+): CategorySlice[] {
+  return [...totals.entries()]
+    .map(([categoryId, cents]) => {
+      const category = categoryById.get(categoryId)
+      return {
+        categoryId,
+        name: category?.name ?? 'Sem categoria',
+        color: category?.color ?? FALLBACK_COLOR,
+        total: cents / 100,
+      }
+    })
+    .sort((left, right) => right.total - left.total || left.name.localeCompare(right.name, 'pt-BR'))
+}
+
+function dayStats(month: string, items: readonly Transaction[]): DayStat[] {
+  const byDate = new Map<string, { expense: number; income: number; expenseCount: number; incomeCount: number; top: Transaction | null }>()
+  for (const transaction of items) {
+    let entry = byDate.get(transaction.occurredOn)
+    if (!entry) {
+      entry = { expense: 0, income: 0, expenseCount: 0, incomeCount: 0, top: null }
+      byDate.set(transaction.occurredOn, entry)
+    }
+    if (transaction.kind === 'expense') {
+      entry.expense += toCents(transaction.amount)
+      entry.expenseCount += 1
+      if (!entry.top || transaction.amount > entry.top.amount) entry.top = transaction
+    } else {
+      entry.income += toCents(transaction.amount)
+      entry.incomeCount += 1
+    }
+  }
+
+  return daysInMonth(month).map((date) => {
+    const entry = byDate.get(date)
+    return {
+      date,
+      day: Number(date.slice(-2)),
+      expense: (entry?.expense ?? 0) / 100,
+      income: (entry?.income ?? 0) / 100,
+      expenseCount: entry?.expenseCount ?? 0,
+      incomeCount: entry?.incomeCount ?? 0,
+      topExpense: entry?.top ?? null,
+    }
+  })
+}
+
+function usageOf(
+  budgets: readonly Budget[],
+  expenseByCategory: Map<string, number>,
+  categoryById: ReadonlyMap<string, Category>,
+): BudgetUsage[] {
+  return budgets
+    .map((budget) => {
+      const category = categoryById.get(budget.categoryId)
+      const spent = (expenseByCategory.get(budget.categoryId) ?? 0) / 100
+      return {
+        budget,
+        categoryName: category?.name ?? 'Categoria',
+        color: category?.color ?? FALLBACK_COLOR,
+        spent,
+        ...budgetStatus(spent, budget.limitAmount),
+      }
+    })
+    // Estouradas, depois em alerta, depois em dia; dentro de cada grupo, pelo percentual.
+    .sort((left, right) => right.ratio - left.ratio)
+}
+
+function overallOf(usage: readonly BudgetUsage[]): DashboardModel['overall'] {
+  let limit = 0
+  let spent = 0
+  for (const item of usage) {
+    limit += toCents(item.budget.limitAmount)
+    spent += toCents(item.spent)
+  }
+  if (limit <= 0) return { limit: 0, spent: spent / 100, ratio: 0, percent: 0, status: 'ok' }
+  return { limit: limit / 100, spent: spent / 100, ...budgetStatus(spent / 100, limit / 100) }
+}
+
 export function buildDashboardModel(
   month: string,
-  categories: Category[],
-  history: Transaction[],
-  budgets: Budget[],
+  categories: readonly Category[],
+  history: readonly Transaction[],
+  budgets: readonly Budget[],
 ): DashboardModel {
-  const monthKeys = Array.from({ length: HISTORY_MONTHS }, (_, index) => shiftMonth(month, index - (HISTORY_MONTHS - 1)))
-  const inMonth = history.filter((transaction) => transaction.occurredOn.startsWith(`${month}-`))
-  const income = totalByKind(inMonth, 'income')
-  const expense = totalByKind(inMonth, 'expense')
-  const balance = roundMoney(income - expense)
-  const expenseCount = inMonth.filter((transaction) => transaction.kind === 'expense').length
-  const expenses = inMonth.filter((transaction) => transaction.kind === 'expense')
-  const categoryName = new Map(categories.map((category) => [category.id, category.name]))
-  const categoryColor = new Map(categories.map((category) => [category.id, category.color]))
-  const days = expensesByDay(inMonth, month)
-  const { daily, flow } = dailyFlows(inMonth, month)
-  const usage = budgetUsage(budgets, inMonth, categories).sort((left, right) => right.ratio - left.ratio)
-  const trend = categoryTrend(history, categories, monthKeys)
+  const byMonth = groupByMonth(history)
+  const inMonth = byMonth.get(month) ?? []
+  const categoryById = new Map(categories.map((category) => [category.id, category]))
+
+  const incomeCents = sumCents(inMonth, 'income')
+  const expenseCents = sumCents(inMonth, 'expense')
+  const balanceCents = incomeCents - expenseCents
+  let expenseCount = 0
+  let largestExpense: Transaction | null = null
+  for (const transaction of inMonth) {
+    if (transaction.kind !== 'expense') continue
+    expenseCount += 1
+    if (!largestExpense || transaction.amount > largestExpense.amount) largestExpense = transaction
+  }
+
+  const expenseByCategory = centsByCategory(inMonth, 'expense')
+  const usage = usageOf(budgets.filter((budget) => budget.month.startsWith(month)), expenseByCategory, categoryById)
+  const transactions = [...inMonth].sort((left, right) => right.occurredOn.localeCompare(left.occurredOn))
 
   return {
     month,
-    income,
-    expense,
-    balance,
-    savingsPercent: income > 0 ? Math.round((balance / income) * 100) : null,
-    incomeCount: inMonth.filter((transaction) => transaction.kind === 'income').length,
+    income: incomeCents / 100,
+    expense: expenseCents / 100,
+    balance: balanceCents / 100,
+    savingsPercent: incomeCents > 0 ? Math.round((balanceCents / incomeCents) * 100) : null,
+    incomeCount: inMonth.length - expenseCount,
     expenseCount,
-    averageExpense: expenseCount > 0 ? roundMoney(expense / expenseCount) : 0,
-    largestExpense: expenses.reduce<Transaction | null>(
-      (largest, transaction) => (largest === null || transaction.amount > largest.amount ? transaction : largest),
-      null,
-    ),
-    expenseSlices: totalsByCategory(inMonth, categories, 'expense'),
-    incomeSlices: totalsByCategory(inMonth, categories, 'income'),
-    days,
-    daily,
-    flow,
-    weekdays: weekdayTotals(inMonth),
-    months: monthKeys.map((key) => monthPoint(key, history)),
-    stackSeries: trend.series,
-    stackPoints: trend.points,
+    averageExpense: expenseCount > 0 ? Math.round(expenseCents / expenseCount) / 100 : 0,
+    largestExpense,
+    expenseSlices: slicesOf(expenseByCategory, categoryById),
+    incomeSlices: slicesOf(centsByCategory(inMonth, 'income'), categoryById),
+    days: dayStats(month, inMonth),
+    months: Array.from({ length: MAX_WINDOW }, (_, index) => {
+      const key = shiftMonth(month, index - (MAX_WINDOW - 1))
+      return monthPoint(key, byMonth.get(key) ?? [])
+    }),
     usage,
-    overall: overallBudget(usage),
-    ...calendarOf(days),
-    scatter: expenses.map((transaction) => ({
-      day: Number(transaction.occurredOn.slice(-2)),
-      amount: transaction.amount,
-      name: transaction.description,
-      category: categoryName.get(transaction.categoryId) ?? 'Sem categoria',
-      fill: categoryColor.get(transaction.categoryId) ?? FALLBACK_COLOR,
-    })),
-    recent: [...inMonth].sort((left, right) => right.occurredOn.localeCompare(left.occurredOn)).slice(0, 6),
-    categoryName,
-  }
-}
-
-function monthPoint(monthKey: string, history: Transaction[]): MonthPoint {
-  const items = history.filter((transaction) => transaction.occurredOn.startsWith(`${monthKey}-`))
-  const income = totalByKind(items, 'income')
-  const expense = totalByKind(items, 'expense')
-  return {
-    key: monthKey,
-    label: shortMonth(monthKey),
-    income,
-    expense,
-    balance: roundMoney(income - expense),
-  }
-}
-
-function shortMonth(monthKey: string): string {
-  const label = format(parse(`${monthKey}-01`, 'yyyy-MM-dd', new Date(2000, 0, 1)), 'MMM', { locale: ptBR }).replace('.', '')
-  return capitalize(label)
-}
-
-function dailyFlows(transactions: Transaction[], month: string): { daily: DayFlow[]; flow: FlowPoint[] } {
-  const income = new Map<string, number>()
-  const expense = new Map<string, number>()
-  for (const transaction of transactions) {
-    if (!transaction.occurredOn.startsWith(`${month}-`)) continue
-    const bucket = transaction.kind === 'income' ? income : expense
-    bucket.set(transaction.occurredOn, (bucket.get(transaction.occurredOn) ?? 0) + toCents(transaction.amount))
-  }
-
-  let incomeRun = 0
-  let expenseRun = 0
-  const daily: DayFlow[] = []
-  const flow: FlowPoint[] = []
-
-  for (const date of daysInMonth(month)) {
-    const dayIncome = income.get(date) ?? 0
-    const dayExpense = expense.get(date) ?? 0
-    incomeRun += dayIncome
-    expenseRun += dayExpense
-    const day = Number(date.slice(-2))
-    daily.push({
-      day,
-      income: dayIncome / 100,
-      expense: dayExpense / 100,
-      net: (dayIncome - dayExpense) / 100,
-    })
-    flow.push({
-      day,
-      income: incomeRun / 100,
-      expense: expenseRun / 100,
-      balance: (incomeRun - expenseRun) / 100,
-    })
-  }
-
-  return { daily, flow }
-}
-
-function weekdayTotals(transactions: Transaction[]): WeekdayPoint[] {
-  const income = Array.from({ length: 7 }, () => 0)
-  const expense = Array.from({ length: 7 }, () => 0)
-  for (const transaction of transactions) {
-    const [year, month, day] = transaction.occurredOn.split('-').map(Number)
-    const index = new Date(year, month - 1, day).getDay()
-    const bucket = transaction.kind === 'income' ? income : expense
-    bucket[index] += toCents(transaction.amount)
-  }
-  return WEEKDAY_LABELS.map((label, index) => ({
-    label,
-    income: income[index] / 100,
-    expense: expense[index] / 100,
-  }))
-}
-
-function categoryTrend(
-  history: Transaction[],
-  categories: Category[],
-  monthKeys: string[],
-): { series: StackSeries[]; points: Array<Record<string, string | number>> } {
-  const perMonth = monthKeys.map((key) => {
-    const totals = new Map<string, number>()
-    for (const transaction of history) {
-      if (transaction.kind !== 'expense' || !transaction.occurredOn.startsWith(`${key}-`)) continue
-      totals.set(transaction.categoryId, (totals.get(transaction.categoryId) ?? 0) + toCents(transaction.amount))
-    }
-    return totals
-  })
-
-  const grand = new Map<string, number>()
-  for (const monthTotals of perMonth) {
-    for (const [categoryId, total] of monthTotals) grand.set(categoryId, (grand.get(categoryId) ?? 0) + total)
-  }
-
-  const ranked = [...grand.entries()].sort((left, right) => right[1] - left[1])
-  const top = ranked.slice(0, 4).map(([categoryId]) => categoryId)
-  const topSet = new Set(top)
-  const series: StackSeries[] = top.map((categoryId) => {
-    const category = categories.find((item) => item.id === categoryId)
-    return {
-      id: categoryId,
-      name: category?.name ?? 'Sem categoria',
-      color: category?.color ?? FALLBACK_COLOR,
-    }
-  })
-  if (ranked.length > top.length) series.push({ id: OTHER_ID, name: 'Outros', color: FALLBACK_COLOR })
-
-  const points = monthKeys.map((key, index) => {
-    const row: Record<string, string | number> = { label: shortMonth(key) }
-    for (const categoryId of top) row[categoryId] = (perMonth[index].get(categoryId) ?? 0) / 100
-    if (ranked.length > top.length) {
-      let rest = 0
-      for (const [categoryId, total] of perMonth[index]) {
-        if (!topSet.has(categoryId)) rest += total
-      }
-      row[OTHER_ID] = rest / 100
-    }
-    return row
-  })
-
-  return { series, points }
-}
-
-function calendarOf(days: DayTotal[]): { calendar: CalendarCell[]; calendarOffset: number } {
-  const peak = days.reduce((max, day) => Math.max(max, day.total), 0)
-  const [year, monthNumber] = (days[0]?.date ?? '2000-01-01').split('-').map(Number)
-  return {
-    calendarOffset: new Date(year, monthNumber - 1, 1).getDay(),
-    calendar: days.map((day) => ({
-      date: day.date,
-      day: day.day,
-      total: day.total,
-      intensity: peak > 0 ? day.total / peak : 0,
-    })),
+    overall: overallOf(usage),
+    transactions,
+    recent: transactions.slice(0, 6),
+    categoryById,
+    byMonth,
   }
 }

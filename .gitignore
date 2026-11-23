@@ -28,3 +28,15 @@ dist-ssr
 
 # Arquivo com credenciais (nao versionar)
 Untitled
+
+# Cache do Python e arquivos do Claude Code (ficam só na máquina local)
+__pycache__/
+.claude/
+CLAUDE.md
+TUTORIAL.md
+
+# Chaves e certificados (iguais aos bloqueios do agente em .claude/settings.json)
+*.pem
+*.key
+*.p12
+secrets/
