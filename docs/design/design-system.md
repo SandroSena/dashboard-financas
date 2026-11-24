@@ -20,7 +20,7 @@ Três princípios:
 
 | Antes | Agora | Motivo |
 |---|---|---|
-| Fundo preto puro `#000` e cards `#121212` neutros | "Tinta" levemente esverdeada: fundo `#070C0B`, superfícies em quatro degraus | Preto puro com uma cor viva é o padrão genérico de painel escuro; o tom puxado para o teal da marca dá identidade e espaço para elevação (cada degrau de superfície fica visível). Também reduz o "smear" de preto absoluto em telas OLED ao rolar. |
+| Fundo preto puro `#000` e cards `#121212` neutros | Fundo preto puro `#000000` (mantido por escolha do usuário) e superfícies em "tinta" levemente esverdeada, em quatro degraus | Preto puro com uma cor viva é o padrão genérico de painel escuro; o tom puxado para o teal da marca dá identidade e espaço para elevação (cada degrau de superfície fica visível). Também reduz o "smear" de preto absoluto em telas OLED ao rolar. |
 | Claro: cinza `#f4f4f4` neutro | "Névoa": `#F1F5F4`, cinza frio com o mesmo matiz da tinta | Os dois temas passam a ser a mesma família; evita o creme quente que virou clichê. |
 | Teal 600 `#0d9488` em botões e links no claro | Teal 700 `#0F766E` | Branco sobre `#0d9488` dá 3,74:1 e o link teal sobre branco também: **reprova** AA para texto. `#0F766E` dá 5,47:1. O teal `#14B8A6` da marca continua no logo e no tema escuro. |
 | Verde 600, rosa 600 e âmbar 600 no claro | Verde 700, rosa 700, âmbar 700 | Verde 600 (3,3:1) e âmbar 600 (3,2:1) sobre branco reprovam como texto. |
@@ -52,12 +52,14 @@ Todos os pares abaixo foram calculados com a fórmula de luminância da WCAG 2.2
 
 | Família | Tons |
 |---|---|
-| Tinta (neutros do escuro) | `ink-1000 #070C0B`, `ink-950 #0A100F`, `ink-900 #0E1514`, `ink-850 #141D1C`, `ink-800 #1A2422`, `ink-750 #1F2A28`, `ink-700 #2A3735`, `ink-600 #56685F`, `ink-500 #5E6E6B`, `ink-400 #83938F`, `ink-300 #97A6A3`, `ink-100 #E6EEEC` |
+| Tinta (neutros do escuro) | `ink-1000 #000000`, `ink-950 #0A100F`, `ink-900 #0E1514`, `ink-850 #141D1C`, `ink-800 #1A2422`, `ink-750 #1F2A28`, `ink-700 #2A3735`, `ink-600 #56685F`, `ink-500 #5E6E6B`, `ink-400 #83938F`, `ink-300 #97A6A3`, `ink-100 #E6EEEC` |
 | Névoa (neutros do claro) | `mist-0 #FFFFFF`, `mist-50 #F1F5F4`, `mist-100 #E8EEED`, `mist-150 #E3EAE8`, `mist-200 #DCE4E2`, `mist-400 #869592`, `mist-450 #7A8A86`, `mist-500 #687873`, `mist-600 #55665F`, `mist-950 #0C1917` |
 | Teal (marca) | `teal-100 #D5F5EF`, `teal-400 #2DD4BF`, `teal-500 #14B8A6`, `teal-700 #0F766E`, `teal-800 #115E59`, `teal-deep #0D2A27`, `teal-ink #032421` |
 | Verde | `green-100 #DCFCE7`, `green-500 #22C55E`, `green-700 #15803D`, `green-deep #0B2A1F` |
 | Rosa | `rose-100 #FFE4E8`, `rose-400 #FB7185`, `rose-700 #BE123C`, `rose-deep #33121A`, `rose-ink #1A0508` |
 | Âmbar | `amber-50 #FEF6E0`, `amber-500 #F59E0B`, `amber-700 #B45309`, `amber-deep #2E220A` |
+
+> **Revisão de 2026-11-23 (pedido do usuário):** o fundo do tema escuro passou de `#070C0B` para preto puro `#000000`. Todos os contrastes sobre o fundo subiram (o preto é o tom mais escuro possível) e os cards (`#0E1514`) se destacam mais (1,14:1 contra 1,07:1). As superfícies continuam em "tinta". Efeito aceito: `sunken` (`#0A100F`) fica levemente mais claro que o fundo quando aparece direto sobre a página; na prática ele quase sempre está dentro de cards. Desvantagem conhecida: rastro ("smear") leve em telas OLED ao rolar rápido.
 
 ### 3.2 Semânticas
 
@@ -65,7 +67,7 @@ Os nomes atuais (`background`, `card`, `muted-foreground`, `income`...) foram **
 
 | Token (`--x` / classe Tailwind) | Papel | Escuro | Claro |
 |---|---|---|---|
-| `background` | Fundo do app | `#070C0B` | `#F1F5F4` |
+| `background` | Fundo do app | `#000000` | `#F1F5F4` |
 | `sunken` | Áreas rebaixadas: trilhos de segmentado, fundo de tabela, campo de busca no fundo | `#0A100F` | `#E8EEED` |
 | `card` | Superfície padrão (cards, listas) | `#0E1514` | `#FFFFFF` |
 | `popover` | Superfície elevada (tooltip, popover, diálogo, folha) | `#141D1C` | `#FFFFFF` + sombra |
@@ -97,16 +99,16 @@ Os nomes atuais (`background`, `card`, `muted-foreground`, `income`...) foram **
 
 | Par | Escuro | Claro | Exigência |
 |---|---|---|---|
-| `foreground` sobre `background` / `card` / `popover` | 16,7 / 15,7 / 14,6 | 16,4 / 18,0 / 18,0 | 4,5 |
-| `muted-foreground` sobre `background` / `card` / `popover` / `sunken` | 7,8 / 7,3 / 6,8 / 7,6 | 5,5 / 6,1 / 6,1 / 5,2 | 4,5 |
+| `foreground` sobre `background` / `card` / `popover` | 17,8 / 15,7 / 14,6 | 16,4 / 18,0 / 18,0 | 4,5 |
+| `muted-foreground` sobre `background` / `card` / `popover` / `sunken` | 8,3 / 7,3 / 6,8 / 7,6 | 5,5 / 6,1 / 6,1 / 5,2 | 4,5 |
 | `brand` sobre `card` / `brand-soft` | 9,9 / 8,2 | 5,5 / 4,7 | 4,5 |
-| `income` sobre `card` / `background` / `income-soft` | 8,1 / 8,6 / 6,8 | 5,0 / 4,6 / 4,6 | 4,5 |
+| `income` sobre `card` / `background` / `income-soft` | 8,1 / 9,2 / 6,8 | 5,0 / 4,6 / 4,6 | 4,5 |
 | `expense` sobre `card` / `popover` / `expense-soft` | 6,9 / 6,4 / 6,3 | 6,3 / 6,3 / 5,2 | 4,5 |
 | `warning` sobre `card` / `warning-soft` | 8,6 / 7,3 | 5,0 / 4,7 | 4,5 |
 | `primary-foreground` sobre `primary` | 6,6 | 5,5 | 4,5 |
 | `destructive-foreground` sobre `destructive` | 7,3 | 6,3 | 4,5 |
-| `ring` sobre `background` / `card` | 7,9 / 7,4 | 5,0 / 5,5 | 3 |
-| `input` sobre `card` / `background` | 3,1 / 3,3 | 3,6 / 3,3 | 3 |
+| `ring` sobre `background` / `card` | 8,4 / 7,4 | 5,0 / 5,5 | 3 |
+| `input` sobre `card` / `background` | 3,1 / 3,5 | 3,6 / 3,3 | 3 |
 | `chart-muted` sobre `card` | 3,5 | 3,1 | 3 |
 
 Regras de uso que garantem esses números:
@@ -306,7 +308,7 @@ Substitui do começo do arquivo até o fim do `@layer base`, e as utilidades e a
 */
 :root {
   /* Tinta: neutros do escuro, puxados para o teal da marca */
-  --ink-1000: #070c0b;
+  --ink-1000: #000000;
   --ink-950: #0a100f;
   --ink-900: #0e1514;
   --ink-850: #141d1c;
