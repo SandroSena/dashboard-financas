@@ -14,7 +14,7 @@ import { Progress } from '@/shared/ui/progress'
 import { Segmented } from '@/shared/ui/segmented'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, Info, Trash } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
 /**
@@ -50,9 +50,7 @@ export function CategoryDialog({
       : { name: '', kind: defaultKind, color: CATEGORY_SLOTS[0].hex },
     reValidateMode: 'onBlur',
   })
-  const color = form.watch('color')
-  const kind = form.watch('kind')
-  const name = form.watch('name')
+  const [color, kind, name] = useWatch({ control: form.control, name: ['color', 'kind', 'name'] })
   const selectedSlot = categorySlot(color)
   const pending = create.isPending || update.isPending
   const counter = nameCounter(name.length)
