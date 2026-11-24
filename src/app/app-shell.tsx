@@ -1,5 +1,6 @@
 import { useAuth } from '@/features/auth/auth-context'
-import { QuickAddProvider, useQuickAdd } from '@/features/lancamentos/quick-add'
+import { QuickAddProvider } from '@/features/lancamentos/quick-add'
+import { useQuickAdd } from '@/features/lancamentos/use-quick-add'
 import { BrandLogo } from '@/shared/components/brand-mark'
 import { LoadingBlock } from '@/shared/components/feedback'
 import { ThemeToggle } from '@/shared/components/theme-toggle'

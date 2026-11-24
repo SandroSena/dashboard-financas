@@ -65,7 +65,8 @@ export function LoginPage() {
         </>
       }
     >
-      <form className="grid gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      {/* handleSubmit dentro do handler: o onSubmit usa o ref focusPassword, que não pode ser lido na renderização. */}
+      <form className="grid gap-5" onSubmit={(event) => void form.handleSubmit(onSubmit)(event)} noValidate>
         <fieldset disabled={submitting} className="grid min-w-0 gap-5">
           <Field label="E-mail" htmlFor="email" error={form.formState.errors.email?.message}>
             <TextInput

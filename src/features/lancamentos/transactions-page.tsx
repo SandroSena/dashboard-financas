@@ -20,7 +20,7 @@ import {
   usePrefetchTransactions,
   useTransactions,
 } from '@/features/lancamentos/hooks'
-import { useQuickAdd } from '@/features/lancamentos/quick-add'
+import { useQuickAdd } from '@/features/lancamentos/use-quick-add'
 import { TransactionDialog } from '@/features/lancamentos/transaction-dialog'
 import { TransactionGroups } from '@/features/lancamentos/transaction-groups'
 import { useTransactionFilters } from '@/features/lancamentos/use-transaction-filters'

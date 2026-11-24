@@ -1,24 +1,9 @@
 import { useCategories } from '@/features/categorias/hooks'
 import type { Prefill } from '@/features/lancamentos/form-defaults'
 import { TransactionDialog } from '@/features/lancamentos/transaction-dialog'
+import { QuickAddContext } from '@/features/lancamentos/use-quick-add'
 import { useMonthParam } from '@/shared/hooks/use-month-param'
-import { createContext, useContext, useState, type ReactNode } from 'react'
-
-type QuickAdd = {
-  /** Abre o diálogo vazio. Pode ser passado direto como `onClick` (ignora o evento). */
-  open: () => void
-  /**
-    Abre com pré-preenchimento vindo do painel: `{ occurredOn: '2026-11-12' }`,
-    `{ kind: 'income' }` ou `{ categoryId }`. Valores inválidos são ignorados.
-  */
-  openWith: (prefill: Prefill) => void
-  /** Pode abrir: as categorias já carregaram (com ou sem categoria; sem, o diálogo explica o que fazer). */
-  ready: boolean
-  /** As categorias ainda estão carregando (o botão fica desabilitado com a dica "Carregando categorias..."). */
-  loading: boolean
-}
-
-const QuickAddContext = createContext<QuickAdd | null>(null)
+import { useState, type ReactNode } from 'react'
 
 /** Um só "Novo lançamento" para o app inteiro: menu lateral, barra do celular, atalho N e telas vazias. */
 export function QuickAddProvider({ children }: { children: ReactNode }) {
@@ -62,10 +47,4 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
       ) : null}
     </QuickAddContext.Provider>
   )
-}
-
-export function useQuickAdd(): QuickAdd {
-  const value = useContext(QuickAddContext)
-  if (!value) throw new Error('useQuickAdd precisa ficar dentro de QuickAddProvider')
-  return value
 }
