@@ -1,11 +1,11 @@
 import type { Budget, Category, Transaction } from '@/domain/types'
-import { buildDashboardModel } from '@/features/painel/model'
+import { buildDashboardModel, groupByMonth, historyBounds } from '@/features/painel/model'
 import { describe, expect, it } from 'vitest'
 
 const categories: Category[] = [
-  { id: 'food', name: 'Alimentação', kind: 'expense', color: '#f97316' },
-  { id: 'rent', name: 'Moradia', kind: 'expense', color: '#6366f1' },
-  { id: 'salary', name: 'Salário', kind: 'income', color: '#16a34a' },
+  { id: 'food', name: 'Alimentação', kind: 'expense', color: '#c2410c' },
+  { id: 'rent', name: 'Moradia', kind: 'expense', color: '#2563eb' },
+  { id: 'salary', name: 'Salário', kind: 'income', color: '#0e7490' },
 ]
 
 const history: Transaction[] = [
@@ -18,38 +18,69 @@ const history: Transaction[] = [
 
 const budgets: Budget[] = [
   { id: 'b1', categoryId: 'food', month: '2026-11', limitAmount: 100 },
-  { id: 'b2', categoryId: 'rent', month: '2026-11', limitAmount: 200 },
+  { id: 'b2', categoryId: 'rent', month: '2026-11', limitAmount: 90 },
 ]
 
-describe('modelo dos layouts', () => {
+describe('modelo do painel', () => {
   const model = buildDashboardModel('2026-11', categories, history, budgets)
 
-  it('isola o mês escolhido e calcula a poupança', () => {
+  it('AC-01: isola o mês aberto e soma em centavos (receitas, gastos, saldo e poupança)', () => {
     expect(model.income).toBe(300)
     expect(model.expense).toBe(200.5)
     expect(model.balance).toBe(99.5)
     expect(model.savingsPercent).toBe(33)
     expect(model.averageExpense).toBe(66.83)
     expect(model.largestExpense?.description).toBe('Aluguel')
+    expect(model.incomeCount).toBe(1)
+    expect(model.expenseCount).toBe(3)
   })
 
-  it('monta seis meses e guarda o gasto de outubro na tendência', () => {
-    expect(model.months).toHaveLength(6)
-    expect(model.months[0]?.key).toBe('2026-06')
-    expect(model.months[5]?.label).toBe('Nov')
-    expect(model.months[4]?.expense).toBe(999)
-    expect(model.stackSeries.map((series) => series.name)).toContain('Alimentação')
-    const october = model.stackPoints[4]
-    expect(october?.food).toBe(999)
+  it('AC-01: soma de centavos não perde precisão com valores quebrados', () => {
+    const items: Transaction[] = Array.from({ length: 10 }, (_, index) => ({
+      id: `x${index}`,
+      categoryId: 'food',
+      kind: 'expense',
+      description: 'Café',
+      amount: 0.1,
+      occurredOn: '2026-11-03',
+    }))
+    expect(buildDashboardModel('2026-11', categories, items, []).expense).toBe(1)
   })
 
-  it('acumula o fluxo e marca o calendário', () => {
-    expect(model.flow[0]).toMatchObject({ day: 1, income: 300, expense: 0, balance: 300 })
-    expect(model.flow[1]).toMatchObject({ day: 2, expense: 100.5, balance: 199.5 })
-    expect(model.flow.at(-1)?.balance).toBe(99.5)
-    expect(model.calendarOffset).toBe(0)
-    expect(model.calendar[1]?.total).toBe(100.5)
-    expect(model.weekdays[1]?.expense).toBe(100.5)
-    expect(model.scatter).toHaveLength(3)
+  it('AC-10: o histórico tem 12 meses terminando no mês aberto', () => {
+    expect(model.months).toHaveLength(12)
+    expect(model.months[0]?.key).toBe('2025-12')
+    expect(model.months.at(-1)?.key).toBe('2026-11')
+    expect(model.months.at(-1)?.label).toBe('Nov')
+    expect(model.months.at(-2)).toMatchObject({ key: '2026-10', expense: 999, count: 1 })
+  })
+
+  it('AC-10: historyBounds com janela de 12 começa 11 meses antes', () => {
+    expect(historyBounds('2026-11', 12)).toEqual({ start: '2025-12-01', end: '2026-11-30' })
+    expect(historyBounds('2026-11', 6)).toEqual({ start: '2026-06-01', end: '2026-11-30' })
+    expect(historyBounds('2026-02')).toEqual({ start: '2025-03-01', end: '2026-02-28' })
+  })
+
+  it('UX-36: cada dia do mês tem gasto, receita, contagem e o maior gasto', () => {
+    expect(model.days).toHaveLength(30)
+    expect(model.days[1]).toMatchObject({ date: '2026-11-02', expense: 100.5, expenseCount: 2 })
+    expect(model.days[1]?.topExpense?.description).toBe('Mercado')
+    expect(model.days[0]).toMatchObject({ income: 300, incomeCount: 1, expense: 0, topExpense: null })
+  })
+
+  it('UX-38: metas vêm da estourada para a em dia', () => {
+    expect(model.usage.map((item) => item.budget.id)).toEqual(['b2', 'b1'])
+    expect(model.usage[0]?.status).toBe('over')
+    expect(model.overall).toMatchObject({ limit: 190, spent: 200.5, status: 'over' })
+  })
+
+  it('UX-39: recentes são os 6 mais novos do mês, do mais recente ao mais antigo', () => {
+    expect(model.recent.map((item) => item.id)).toEqual(['3', '1', '2', '4'])
+  })
+
+  it('agrupa o histórico por mês numa passada', () => {
+    const byMonth = groupByMonth(history)
+    expect(byMonth.get('2026-11')).toHaveLength(4)
+    expect(byMonth.get('2026-10')).toHaveLength(1)
   })
 })

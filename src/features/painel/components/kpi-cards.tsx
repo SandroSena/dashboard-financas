@@ -1,77 +1,83 @@
 import { formatBrl } from '@/domain/money'
-import { budgetStatusLabel } from '@/domain/summary'
-import { Sparkline } from '@/features/painel/charts'
-import type { DashboardInsights } from '@/features/painel/insights'
-import type { DashboardModel } from '@/features/painel/model'
+import { STATUS_LABEL } from '@/features/orcamentos/model'
 import { statusTone } from '@/features/orcamentos/status-tone'
+import { Sparkline } from '@/features/painel/charts/sparkline'
+import { plural } from '@/features/painel/format'
+import type { ComparisonCopy, DashboardInsights } from '@/features/painel/insights'
+import { budgetsLink, transactionsLink } from '@/features/painel/links'
+import type { DashboardModel, MonthPoint } from '@/features/painel/model'
 import { Amount } from '@/shared/components/amount'
+import { Delta } from '@/shared/components/delta'
+import { describeDelta } from '@/shared/components/delta-format'
 import { cn } from '@/shared/lib/utils'
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  ChevronRight,
-  Minus,
-  PiggyBank,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  type LucideIcon,
-} from 'lucide-react'
+import { Progress } from '@/shared/ui/progress'
+import { ChevronRight, PiggyBank, Target, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+const progressTone = { ok: 'income', warning: 'warning', over: 'expense' } as const
+
 /**
-  Faixa de indicadores logo abaixo do destaque do mês. Cada card segue o mesmo contrato:
-  rótulo, valor, variação contra o mês anterior (sinal + seta, nunca só cor), uma linha
-  de contexto e a tendência dos últimos 6 meses. O card inteiro leva ao detalhe.
+  Faixa de indicadores (spec 4.3, design system 10.10). Cada card é um link inteiro, com
+  `aria-label` que resume valor, variação e destino.
 */
 export function KpiStrip({
   model,
   insights,
-  previousLabel,
-  month,
+  copy,
+  months,
+  budgetsFailed,
+  animateBars,
 }: {
   model: DashboardModel
   insights: DashboardInsights
-  previousLabel: string
-  month: string
+  copy: ComparisonCopy
+  /** Meses da janela (6 ou 12) para as minitendências. */
+  months: MonthPoint[]
+  budgetsFailed: boolean
+  animateBars: boolean
 }) {
-  const months = model.months
-  const plural = (count: number) => `${count} ${count === 1 ? 'lançamento' : 'lançamentos'}`
+  const month = model.month
+  const deltaProps = { comparison: copy.phrase, label: copy.deltaLabel, emptyLabel: copy.emptyLabel }
+  const srDelta = (value: number | null, unit: 'percent' | 'money', goodWhen: 'up' | 'down') =>
+    value === null ? copy.emptyLabel : describeDelta(value, unit, goodWhen, copy.phrase).srText
 
   return (
     <section aria-label="Indicadores do mês" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
       <KpiCard
-        to={`/lancamentos?mes=${month}`}
+        to={transactionsLink(month, { kind: 'income' })}
+        label="Receitas"
+        ariaLabel={`Receitas: ${formatBrl(model.income)}, ${srDelta(insights.incomeChange, 'percent', 'up')}. Ver lançamentos de receita.`}
         icon={TrendingUp}
         iconClass="bg-income-soft text-income"
-        label="Receitas"
         value={<Amount value={model.income} />}
-        delta={<Delta value={insights.incomeChange} unit="percent" goodWhen="up" previousLabel={previousLabel} />}
-        note={plural(model.incomeCount)}
+        delta={<Delta value={insights.incomeChange} unit="percent" goodWhen="up" {...deltaProps} />}
+        note={plural(model.incomeCount, 'lançamento', 'lançamentos')}
         trend={<Sparkline values={months.map((point) => point.income)} color="var(--income)" />}
       />
       <KpiCard
-        to={`/lancamentos?mes=${month}`}
+        to={transactionsLink(month, { kind: 'expense' })}
+        label="Gastos"
+        ariaLabel={`Gastos: ${formatBrl(model.expense)}, ${srDelta(insights.expenseChange, 'percent', 'down')}. Ver lançamentos de gasto.`}
         icon={TrendingDown}
         iconClass="bg-expense-soft text-expense"
-        label="Gastos"
         value={<Amount value={model.expense} />}
-        delta={<Delta value={insights.expenseChange} unit="percent" goodWhen="down" previousLabel={previousLabel} />}
+        delta={<Delta value={insights.expenseChange} unit="percent" goodWhen="down" {...deltaProps} />}
         note={
           model.expenseCount > 0
-            ? `${plural(model.expenseCount)} · média de ${formatBrl(model.averageExpense)}`
-            : plural(0)
+            ? `${plural(model.expenseCount, 'lançamento', 'lançamentos')}, média de ${formatBrl(model.averageExpense)}`
+            : plural(0, 'lançamento', 'lançamentos')
         }
         trend={<Sparkline values={months.map((point) => point.expense)} color="var(--expense)" />}
       />
       <KpiCard
-        to={`/lancamentos?mes=${month}`}
+        to={transactionsLink(month)}
+        label="Saldo"
+        ariaLabel={`Saldo: ${formatBrl(model.balance)}, ${srDelta(insights.balanceChange, 'money', 'up')}. Ver lançamentos do mês.`}
         icon={PiggyBank}
         iconClass="bg-brand-soft text-brand"
-        label="Saldo"
         value={<Amount value={model.balance} className={cn(model.balance < 0 && 'text-expense')} />}
-        delta={<Delta value={insights.balanceChange} unit="money" goodWhen="up" previousLabel={previousLabel} />}
+        delta={<Delta value={insights.balanceChange} unit="money" goodWhen="up" {...deltaProps} />}
         note={
           model.savingsPercent === null
             ? 'Sem receita lançada'
@@ -81,128 +87,110 @@ export function KpiStrip({
         }
         trend={<Sparkline values={months.map((point) => point.balance)} color="var(--brand)" />}
       />
-      <BudgetKpi model={model} insights={insights} month={month} />
+      <BudgetKpi model={model} insights={insights} failed={budgetsFailed} animate={animateBars} />
     </section>
   )
 }
 
 function KpiCard({
   to,
+  label,
+  ariaLabel,
   icon: Icon,
   iconClass,
-  label,
   value,
   delta,
   note,
   trend,
 }: {
   to: string
+  label: string
+  ariaLabel: string
   icon: LucideIcon
   iconClass: string
-  label: string
   value: ReactNode
-  delta?: ReactNode
+  delta: ReactNode
   note: ReactNode
   trend: ReactNode
 }) {
   return (
     <Link
       to={to}
-      className="surface group relative grid min-w-0 content-start gap-3 p-4 transition-[transform,box-shadow] duration-300 ease-fluid hover:-translate-y-0.5 hover:shadow-[var(--card-edge),0_14px_32px_-18px_rgb(0_0_0/0.35)] sm:p-5"
+      aria-label={ariaLabel}
+      className="surface surface-interactive group relative grid min-w-0 content-start gap-3 rounded-card p-4 sm:p-5"
     >
-      <div className="flex items-center justify-between gap-2">
+      <span className="flex items-center justify-between gap-2" aria-hidden="true">
         <span className="flex min-w-0 items-center gap-2">
-          <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-lg', iconClass)} aria-hidden="true">
+          <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-control', iconClass)}>
             <Icon className="size-3.5" />
           </span>
           <span className="eyebrow truncate">{label}</span>
         </span>
-        <ChevronRight
-          className="size-4 shrink-0 text-muted-foreground opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-          aria-hidden="true"
-        />
-      </div>
-
-      <div className="grid gap-1.5">
-        <p className="figure truncate text-[1.375rem] leading-none font-semibold sm:text-[1.75rem]">{value}</p>
+        <ChevronRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-[opacity,transform] duration-(--duration-fast) group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:translate-x-0.5 group-focus-visible:opacity-100" />
+      </span>
+      <span className="grid gap-1.5" aria-hidden="true">
+        <span className="figure truncate text-title leading-none font-semibold lg:text-heading">{value}</span>
         {delta}
-      </div>
-
-      {trend}
-
-      <p className="line-clamp-2 text-xs text-muted-foreground">{note}</p>
+      </span>
+      <span className="hidden min-[400px]:block" aria-hidden="true">
+        {trend}
+      </span>
+      <span className="line-clamp-2 text-caption text-muted-foreground" aria-hidden="true">
+        {note}
+      </span>
     </Link>
   )
 }
 
-/** Variação contra o mês anterior: pílula com seta e sinal; a cor diz se é bom ou ruim. */
-function Delta({
-  value,
-  unit,
-  goodWhen,
-  previousLabel,
+function BudgetKpi({
+  model,
+  insights,
+  failed,
+  animate,
 }: {
-  value: number | null
-  unit: 'percent' | 'money'
-  goodWhen: 'up' | 'down'
-  previousLabel: string
+  model: DashboardModel
+  insights: DashboardInsights
+  failed: boolean
+  animate: boolean
 }) {
-  if (value === null) {
-    return <span className="text-xs text-muted-foreground">Sem {previousLabel} para comparar</span>
-  }
-  const Icon = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus
-  const good = value === 0 ? null : goodWhen === 'up' ? value > 0 : value < 0
-  const sign = value > 0 ? '+' : value < 0 ? '−' : ''
-  const amount = unit === 'percent' ? `${Math.abs(value)}%` : formatBrl(Math.abs(value))
-
-  return (
-    <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-      <span
-        className={cn(
-          'figure inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold',
-          good === true && 'bg-income-soft text-income',
-          good === false && 'bg-expense-soft text-expense',
-          good === null && 'bg-muted text-muted-foreground',
-        )}
-      >
-        <Icon className="size-3" aria-hidden="true" />
-        {sign}
-        {amount}
-      </span>
-      <span className="truncate">vs {previousLabel}</span>
-    </span>
-  )
-}
-
-function BudgetKpi({ model, insights, month }: { model: DashboardModel; insights: DashboardInsights; month: string }) {
   const { overall } = model
-  const to = `/orcamentos?mes=${month}`
+  const to = budgetsLink(model.month)
 
-  if (overall.limit === 0) {
+  if (failed || overall.limit === 0) {
     return (
       <KpiCard
         to={to}
+        label="Metas"
+        ariaLabel={failed ? 'Metas: as metas não carregaram. Abrir Orçamentos.' : 'Metas: nenhum limite no mês. Definir metas.'}
         icon={Target}
         iconClass="bg-muted text-muted-foreground"
-        label="Metas"
         value={<span className="text-muted-foreground">—</span>}
-        delta={<span className="text-xs text-muted-foreground">Nenhum limite no mês</span>}
-        note={<span className="font-semibold text-brand">Definir metas</span>}
-        trend={<div className="h-10" aria-hidden="true" />}
+        delta={<span className="text-caption text-muted-foreground">{failed ? 'Não carregou' : 'Nenhum limite no mês'}</span>}
+        note={failed ? 'Tentem de novo no card de metas.' : <span className="font-semibold text-brand">Definir metas</span>}
+        trend={<div className="h-10" />}
       />
     )
   }
 
   const tone = statusTone[overall.status]
   const StatusIcon = tone.icon
-  const used = Math.min(overall.percent, 100)
+  const note =
+    insights.remainingBudget !== null && insights.remainingBudget < 0
+      ? `Passou ${formatBrl(-insights.remainingBudget)} do limite`
+      : insights.dailyAllowance !== null
+        ? `Cabem ${formatBrl(insights.dailyAllowance)}/dia até o fim do mês`
+        : `${formatBrl(overall.spent)} de ${formatBrl(overall.limit)}`
 
   return (
     <KpiCard
       to={to}
-      icon={Target}
-      iconClass="bg-warning-soft text-warning"
       label="Metas"
+      ariaLabel={`Metas: ${overall.percent}% usado, ${STATUS_LABEL[overall.status]}. ${note}. Ver orçamentos.`}
+      icon={Target}
+      iconClass={cn(
+        overall.status === 'over' ? 'bg-expense-soft' : overall.status === 'warning' ? 'bg-warning-soft' : 'bg-income-soft',
+        tone.text,
+      )}
       value={
         <>
           {overall.percent}
@@ -210,29 +198,15 @@ function BudgetKpi({ model, insights, month }: { model: DashboardModel; insights
         </>
       }
       delta={
-        <span className={cn('flex items-center gap-1 text-xs font-semibold', tone.text)}>
-          <StatusIcon className="size-3.5" aria-hidden="true" />
-          {budgetStatusLabel(overall.status)}
+        <span className={cn('flex items-center gap-1 text-caption font-semibold', tone.text)}>
+          <StatusIcon className="size-3.5" />
+          {STATUS_LABEL[overall.status]}
         </span>
       }
-      note={
-        insights.remainingBudget !== null && insights.remainingBudget < 0 ? (
-          <>Passou {formatBrl(-insights.remainingBudget)} do limite</>
-        ) : insights.dailyAllowance !== null ? (
-          <>
-            Cabem <span className="font-semibold text-foreground">{formatBrl(insights.dailyAllowance)}/dia</span> até o fim do mês
-          </>
-        ) : (
-          <>
-            {formatBrl(overall.spent)} de {formatBrl(overall.limit)}
-          </>
-        )
-      }
+      note={note}
       trend={
-        <div className="flex h-10 items-center" aria-hidden="true">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-track">
-            <div className={cn('fill-in h-full rounded-full', tone.bar)} style={{ width: `${used}%` }} />
-          </div>
+        <div className="flex h-10 items-center">
+          <Progress value={Math.min(overall.percent, 100)} tone={progressTone[overall.status]} animateOnMount={animate} />
         </div>
       }
     />

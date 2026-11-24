@@ -5,125 +5,322 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Paleta: preto e cores vivas (escala do Tailwind)
-  preto   #000000  fundo do app (tema escuro, o padrão)
-  carvão  #121212  superfícies (painéis, diálogos)
-  teal    #14b8a6  marca e ações principais
-  verde   #22c55e  receitas, metas em dia
-  rosa    #f43f5e  gastos, metas estouradas
-  âmbar   #f59e0b  alerta
-  O tema claro usa um tom acima (600) das mesmas cores, para ler bem sobre o branco.
+  Design system "Régua" (docs/design/design-system.md).
+  Camada 1, base: valores crus. Componentes NUNCA usam estes nomes.
 */
 :root {
-  color-scheme: light;
-  --background: #f4f4f4;
-  --foreground: #141414;
-  --card: #ffffff;
-  --card-foreground: #141414;
-  --popover: #ffffff;
-  --popover-foreground: #141414;
-  --primary: #0d9488;
-  --primary-foreground: #ffffff;
-  --secondary: #e9e9e9;
-  --secondary-foreground: #141414;
-  --muted: #ebebeb;
-  --muted-foreground: #666666;
-  --accent: #ececec;
-  --accent-foreground: #141414;
-  --destructive: #e11d48;
-  --border: #e2e2e2;
-  --input: #d4d4d4;
-  --ring: #0d9488;
-  --income: #16a34a;
-  --expense: #e11d48;
-  --warning: #d97706;
-  --brand: #0d9488;
-  --brand-foreground: #ffffff;
-  --brand-soft: #ccfbf1;
-  --chart-grid: #e6e6e6;
-  --chart-muted: #b3b3b3;
-  --track: #e4e4e4;
-  --overlay: rgb(0 0 0 / 0.45);
-  --card-edge: 0 0 0 1px rgb(0 0 0 / 0.05), 0 1px 2px rgb(0 0 0 / 0.04);
-  --income-soft: #dcfce7;
-  --expense-soft: #ffe4e6;
-  --warning-soft: #fef3c7;
+  /* Tinta: neutros do escuro, puxados para o teal da marca */
+  --ink-1000: #000000;
+  --ink-950: #0a100f;
+  --ink-900: #0e1514;
+  --ink-850: #141d1c;
+  --ink-800: #1a2422;
+  --ink-750: #1f2a28;
+  --ink-700: #2a3735;
+  --ink-600: #56685f;
+  --ink-500: #5e6e6b;
+  --ink-400: #83938f;
+  --ink-300: #97a6a3;
+  --ink-100: #e6eeec;
+  /* Névoa: neutros do claro, mesmo matiz */
+  --mist-0: #ffffff;
+  --mist-50: #f1f5f4;
+  --mist-100: #e8eeed;
+  --mist-150: #e3eae8;
+  --mist-200: #dce4e2;
+  --mist-400: #869592;
+  --mist-450: #7a8a86;
+  --mist-500: #687873;
+  --mist-600: #55665f;
+  --mist-950: #0c1917;
+  /* Marca e significado */
+  --teal-100: #d5f5ef;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-deep: #0d2a27;
+  --teal-ink: #032421;
+  --green-100: #dcfce7;
+  --green-500: #22c55e;
+  --green-700: #15803d;
+  --green-deep: #0b2a1f;
+  --rose-100: #ffe4e8;
+  --rose-400: #fb7185;
+  --rose-700: #be123c;
+  --rose-deep: #33121a;
+  --rose-ink: #1a0508;
+  --amber-50: #fef6e0;
+  --amber-500: #f59e0b;
+  --amber-700: #b45309;
+  --amber-deep: #2e220a;
+
+  /* Movimento e espaço: iguais nos dois temas */
+  --duration-instant: 90ms;
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+  --duration-chart: 700ms;
+  --duration-hero: 900ms;
+  /* Linha recém-salva: o fundo brand-soft esmaece nesse tempo (design system 7 e 10.11). */
+  --duration-flash: 1200ms;
+  /* Com movimento reduzido, a linha fica marcada esse tempo e some sem esmaecer. */
+  --duration-flash-hold: 1000ms;
+  /* Um ciclo da barra de progresso indeterminada (troca de mês sem cache). */
+  --duration-loop: 1400ms;
+  --space-inset-sm: 0.75rem;
+  --space-inset-md: 1rem;
+  --space-inset-lg: 1.5rem;
+  --space-stack-xs: 0.25rem;
+  --space-stack-sm: 0.5rem;
+  --space-stack-md: 1rem;
+  --space-gutter: 0.75rem;
+  --space-section: 2rem;
+  --content-wide: 85rem;
   --radius: 1.25rem;
 }
 
-.dark {
-  color-scheme: dark;
-  --background: #000000;
-  --foreground: #ededed;
-  --card: #121212;
-  --card-foreground: #ededed;
-  --popover: #181818;
-  --popover-foreground: #ededed;
-  --primary: #14b8a6;
-  --primary-foreground: #04201d;
-  --secondary: #1f1f1f;
-  --secondary-foreground: #ededed;
-  --muted: #1c1c1c;
-  --muted-foreground: #9a9a9a;
-  --accent: #222222;
-  --accent-foreground: #ededed;
-  --destructive: #f43f5e;
-  --border: #262626;
-  --input: #333333;
-  --ring: #14b8a6;
-  --income: #22c55e;
-  --expense: #f43f5e;
-  --warning: #f59e0b;
-  --brand: #14b8a6;
-  --brand-foreground: #04201d;
-  --brand-soft: #0b2e2a;
-  --chart-grid: #222222;
-  --chart-muted: #555555;
-  --track: #242424;
-  --overlay: rgb(0 0 0 / 0.7);
-  --card-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
-  --income-soft: #0d2e19;
-  --expense-soft: #3a0d18;
-  --warning-soft: #36260a;
+@media (min-width: 1024px) {
+  :root {
+    --space-gutter: 1rem;
+  }
 }
 
+@media (min-width: 768px) {
+  :root {
+    --space-section: 3rem;
+  }
+}
+
+/* Camada 2, semântica: tema claro */
+:root {
+  color-scheme: light;
+  --background: var(--mist-50);
+  --sunken: var(--mist-100);
+  --foreground: var(--mist-950);
+  --card: var(--mist-0);
+  --card-foreground: var(--mist-950);
+  --popover: var(--mist-0);
+  --popover-foreground: var(--mist-950);
+  --primary: var(--teal-700);
+  --primary-hover: var(--teal-800);
+  --primary-foreground: var(--mist-0);
+  --secondary: var(--mist-100);
+  --secondary-foreground: var(--mist-950);
+  --muted: var(--mist-100);
+  --muted-foreground: var(--mist-600);
+  --subtle-foreground: var(--mist-500);
+  --accent: var(--mist-150);
+  --accent-foreground: var(--mist-950);
+  --destructive: var(--rose-700);
+  --destructive-foreground: var(--mist-0);
+  --border: var(--mist-200);
+  --input: var(--mist-450);
+  --ring: var(--teal-700);
+  --brand: var(--teal-700);
+  --brand-foreground: var(--mist-0);
+  --brand-soft: var(--teal-100);
+  --brand-mark: var(--teal-500);
+  /* Desenho do logo sobre brand-mark: 6,6:1 nos dois temas (branco daria 2,5:1). */
+  --brand-mark-foreground: var(--teal-ink);
+  --income: var(--green-700);
+  --income-soft: var(--green-100);
+  --expense: var(--rose-700);
+  --expense-soft: var(--rose-100);
+  --warning: var(--amber-700);
+  --warning-soft: var(--amber-50);
+  --track: var(--mist-150);
+  --chart-grid: var(--mist-100);
+  --chart-muted: var(--mist-400);
+  --chart-cursor: var(--mist-200);
+  --overlay: rgb(12 25 23 / 0.4);
+
+  --cat-azul: #2563eb;
+  --cat-roxo: #7c3aed;
+  --cat-laranja: #c2410c;
+  --cat-fucsia: #a21caf;
+  --cat-ouro: #a16207;
+  --cat-ciano: #0e7490;
+  --cat-cafe: #8a5a2b;
+  --cat-ardosia: #64748b;
+
+  --seq-1: #ccf0ea;
+  --seq-2: #8fddd1;
+  --seq-3: #3fbfaf;
+  /* #0d7d72 (antes #0f8a7e): o número do dia em `card` passa de 4,2:1 para 5,0:1. */
+  --seq-4: #0d7d72;
+  --seq-5: #0b5b53;
+
+  --elev-edge: 0 0 0 1px rgb(12 25 23 / 0.06), 0 1px 2px rgb(12 25 23 / 0.05);
+  --elev-raised: 0 0 0 1px rgb(12 25 23 / 0.07), 0 14px 32px -18px rgb(12 25 23 / 0.32);
+  --elev-overlay: 0 0 0 1px rgb(12 25 23 / 0.08), 0 16px 40px -12px rgb(12 25 23 / 0.3);
+  --elev-dialog: 0 0 0 1px rgb(12 25 23 / 0.06), 0 28px 72px -24px rgb(12 25 23 / 0.45);
+  /* compatibilidade: o nome antigo aponta para o novo */
+  --card-edge: var(--elev-edge);
+}
+
+/* Camada 2, semântica: tema escuro (o padrão) */
+.dark {
+  color-scheme: dark;
+  --background: var(--ink-1000);
+  --sunken: var(--ink-950);
+  --foreground: var(--ink-100);
+  --card: var(--ink-900);
+  --card-foreground: var(--ink-100);
+  --popover: var(--ink-850);
+  --popover-foreground: var(--ink-100);
+  --primary: var(--teal-500);
+  --primary-hover: var(--teal-400);
+  --primary-foreground: var(--teal-ink);
+  --secondary: var(--ink-800);
+  --secondary-foreground: var(--ink-100);
+  --muted: var(--ink-800);
+  --muted-foreground: var(--ink-300);
+  --subtle-foreground: var(--ink-400);
+  --accent: var(--ink-750);
+  --accent-foreground: var(--ink-100);
+  --destructive: var(--rose-400);
+  --destructive-foreground: var(--rose-ink);
+  --border: var(--ink-750);
+  --input: var(--ink-600);
+  --ring: var(--teal-500);
+  --brand: var(--teal-400);
+  --brand-foreground: var(--teal-ink);
+  --brand-soft: var(--teal-deep);
+  --brand-mark: var(--teal-500);
+  --brand-mark-foreground: var(--teal-ink);
+  --income: var(--green-500);
+  --income-soft: var(--green-deep);
+  --expense: var(--rose-400);
+  --expense-soft: var(--rose-deep);
+  --warning: var(--amber-500);
+  --warning-soft: var(--amber-deep);
+  --track: var(--ink-800);
+  --chart-grid: var(--ink-800);
+  --chart-muted: var(--ink-500);
+  --chart-cursor: var(--ink-700);
+  --overlay: rgb(3 6 6 / 0.72);
+
+  --cat-azul: #60a5fa;
+  --cat-roxo: #a78bfa;
+  --cat-laranja: #fb923c;
+  --cat-fucsia: #e879f9;
+  --cat-ouro: #facc15;
+  --cat-ciano: #22d3ee;
+  --cat-cafe: #d6a26e;
+  --cat-ardosia: #94a3b8;
+
+  --seq-1: #12302c;
+  --seq-2: #115e56;
+  --seq-3: #0f8a7e;
+  --seq-4: #2dd4bf;
+  --seq-5: #99f6e4;
+
+  --elev-edge: inset 0 0 0 1px rgb(230 238 236 / 0.06);
+  --elev-raised: inset 0 0 0 1px rgb(230 238 236 / 0.1), 0 18px 40px -20px rgb(0 0 0 / 0.85);
+  --elev-overlay: inset 0 0 0 1px rgb(230 238 236 / 0.1), 0 20px 48px -16px rgb(0 0 0 / 0.85);
+  --elev-dialog: inset 0 0 0 1px rgb(230 238 236 / 0.08), 0 32px 80px -24px rgb(0 0 0 / 0.9);
+  --card-edge: var(--elev-edge);
+}
+
+/* Camada 3: o que vira classe do Tailwind */
 @theme inline {
   --font-sans: 'Figtree Variable', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Bricolage Grotesque Variable', 'Figtree Variable', ui-sans-serif, sans-serif;
+
   --color-background: var(--background);
+  --color-sunken: var(--sunken);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-income: var(--income);
-  --color-expense: var(--expense);
-  --color-warning: var(--warning);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
-  --color-track: var(--track);
+  --color-brand-mark: var(--brand-mark);
+  --color-brand-mark-foreground: var(--brand-mark-foreground);
+  --color-income: var(--income);
   --color-income-soft: var(--income-soft);
+  --color-expense: var(--expense);
   --color-expense-soft: var(--expense-soft);
+  --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-track: var(--track);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-muted: var(--chart-muted);
+  --color-chart-cursor: var(--chart-cursor);
+  --color-cat-azul: var(--cat-azul);
+  --color-cat-roxo: var(--cat-roxo);
+  --color-cat-laranja: var(--cat-laranja);
+  --color-cat-fucsia: var(--cat-fucsia);
+  --color-cat-ouro: var(--cat-ouro);
+  --color-cat-ciano: var(--cat-ciano);
+  --color-cat-cafe: var(--cat-cafe);
+  --color-cat-ardosia: var(--cat-ardosia);
+  --color-seq-1: var(--seq-1);
+  --color-seq-2: var(--seq-2);
+  --color-seq-3: var(--seq-3);
+  --color-seq-4: var(--seq-4);
+  --color-seq-5: var(--seq-5);
+
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.125rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.6875rem;
+  --text-title-sm: 1.125rem;
+  --text-title-sm--line-height: 1.5rem;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.75rem;
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 2rem;
+  --text-display: 2.5rem;
+  --text-display--line-height: 2.75rem;
+  --text-hero: clamp(2.75rem, 1.9rem + 3.6vw, 5.25rem);
+  --text-hero--line-height: 0.95;
+
+  --radius-chip: 0.375rem;
+  --radius-control: 0.75rem;
+  --radius-card: var(--radius);
+  --radius-sheet: 1.75rem;
+  /* nomes antigos, mantidos */
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
   --radius-lg: 0.75rem;
   --radius-xl: var(--radius);
   --radius-2xl: 1.75rem;
+
+  --shadow-edge: var(--elev-edge);
+  --shadow-raised: var(--elev-raised);
+  --shadow-overlay: var(--elev-overlay);
+  --shadow-dialog: var(--elev-dialog);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  --container-wide: var(--content-wide);
 }
 
 @layer base {
@@ -131,13 +328,11 @@
     @apply border-border;
   }
 
-  /*
-    Sem font-feature-settings global: ele herda e anula a classe tabular-nums.
-    O padrão da fonte já é proporcional; listas e tabelas pedem tabular-nums.
-  */
   html {
     @apply font-sans antialiased;
     -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 4.5rem;
+    scroll-padding-bottom: 6.5rem;
   }
 
   body {
@@ -145,7 +340,9 @@
     min-height: 100svh;
     background: var(--background);
     color: var(--foreground);
-    transition: background-color 240ms ease, color 240ms ease;
+    transition:
+      background-color var(--duration-base) var(--ease-standard),
+      color var(--duration-base) var(--ease-standard);
   }
 
   h1,
@@ -182,7 +379,7 @@
   font-variation-settings: 'opsz' 60;
 }
 
-/* Número grande e solto (destaque do topo): fonte de título, algarismos proporcionais. */
+/* Número do campo de valor e números de título: Bricolage compacta. */
 @utility numeral {
   font-family: var(--font-display);
   font-variant-numeric: lining-nums proportional-nums;
@@ -190,108 +387,248 @@
   letter-spacing: -0.025em;
 }
 
-/* Valor de indicador ou de lista: fonte do texto, peso forte, algarismos que alinham em coluna. */
+/* Número do destaque do painel. */
+@utility numeral-hero {
+  font-family: var(--font-sans);
+  font-size: var(--text-hero);
+  line-height: 0.95;
+  font-weight: 600;
+  font-variant-numeric: lining-nums proportional-nums;
+  letter-spacing: -0.035em;
+}
+
+/* Valor em lista e indicador: alinha em coluna. */
 @utility figure {
   font-family: var(--font-sans);
   font-variant-numeric: lining-nums tabular-nums;
   letter-spacing: -0.015em;
 }
 
-/* Rótulo pequeno em caixa alta, acima de um valor. */
+/* Rótulo pequeno acima de um valor. Caixa normal, nunca caixa alta. */
 @utility eyebrow {
-  font-size: 0.6875rem;
-  line-height: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
-/* Superfície de card: tom do papel e um fio de 1px para separar do fundo. */
 @utility surface {
   background: var(--card);
   color: var(--card-foreground);
   border-radius: var(--radius);
-  box-shadow: var(--card-edge);
+  box-shadow: var(--elev-edge);
 }
 
-@keyframes overlay-in {
-  from {
-    opacity: 0;
+/* Card inteiro clicável (link ou botão). */
+@utility surface-interactive {
+  cursor: pointer;
+  transition:
+    transform var(--duration-base) var(--ease-fluid),
+    box-shadow var(--duration-base) var(--ease-standard);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-raised);
   }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -47%) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+  &:active {
+    transform: translateY(0) scale(0.99);
   }
 }
 
-@keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-  to {
+/* Esqueleto: brilho lento; parado com movimento reduzido. */
+@utility skeleton {
+  border-radius: var(--radius-control);
+  background: linear-gradient(90deg, var(--muted) 0%, var(--accent) 50%, var(--muted) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-sheen 1.6s linear infinite;
+}
+
+/* Link "Pular para o conteúdo": fora da tela até receber foco. */
+@utility skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 60;
+  transform: translateY(-200%);
+  transition: transform var(--duration-fast) var(--ease-standard);
+  &:focus-visible {
     transform: none;
   }
 }
 
-/* A régua do mês enche uma vez, quando o painel abre. */
+@keyframes skeleton-sheen {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/*
+  O diálogo é centralizado com margin auto (não com translate), porque no Tailwind 4
+  as classes translate-* usam a propriedade `translate`, que somaria com o `transform` da animação.
+*/
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(3%) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes dialog-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: scale(0.97); }
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+@keyframes sheet-out {
+  from { transform: none; }
+  to { transform: translateY(100%); }
+}
+
+@keyframes sheet-side-in {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+
+@keyframes sheet-side-out {
+  from { transform: none; }
+  to { transform: translateX(100%); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 @keyframes fill-in {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @keyframes page-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.overlay-in {
-  animation: overlay-in 200ms ease;
-}
+.overlay-in { animation: overlay-in var(--duration-base) var(--ease-standard); }
+.dialog-in { animation: dialog-in 280ms var(--ease-fluid); }
+.sheet-side-in { animation: sheet-side-in var(--duration-slow) var(--ease-fluid); }
+.pop-in { animation: pop-in var(--duration-base) var(--ease-fluid); transform-origin: var(--radix-popper-transform-origin, center); }
+.page-in { animation: page-in var(--duration-base) var(--ease-standard) both; }
 
-.dialog-in {
-  animation: dialog-in 280ms var(--ease-fluid);
-}
+/* Saídas: ~70% da entrada, com ease-exit (o Radix espera o fim da animação para desmontar). */
+.overlay-in[data-state='closed'] { animation: overlay-out 180ms var(--ease-exit) forwards; }
+.dialog-in[data-state='closed'] { animation: dialog-out 200ms var(--ease-exit) forwards; }
+.sheet-side-in[data-state='closed'] { animation: sheet-side-out 250ms var(--ease-exit) forwards; }
+.pop-in[data-state='closed'] { animation: pop-out 150ms var(--ease-exit) forwards; }
 
 @media (max-width: 639px) {
-  .dialog-in {
+  .dialog-in,
+  .sheet-side-in {
     animation: sheet-in 340ms var(--ease-fluid);
+  }
+
+  .dialog-in[data-state='closed'],
+  .sheet-side-in[data-state='closed'] {
+    animation: sheet-out 240ms var(--ease-exit) forwards;
   }
 }
 
+/* A régua do mês e as barras de progresso enchem uma vez. */
 .fill-in {
   transform-origin: left;
-  animation: fill-in 900ms var(--ease-fluid) 120ms both;
+  animation: fill-in var(--duration-hero) var(--ease-fluid) 120ms both;
 }
 
-.page-in {
-  animation: page-in 220ms ease both;
+/*
+  Linha recém-criada/salva: fundo brand-soft que esmaece (design system 10.11).
+  Para disparar de novo na mesma linha, remonte o elemento (ex.: `key` com o token do salvamento).
+*/
+@keyframes row-flash {
+  from { background-color: var(--brand-soft); }
+  to { background-color: transparent; }
+}
+
+@keyframes row-flash-hold {
+  from, to { background-color: var(--brand-soft); }
+}
+
+.row-flash {
+  animation: row-flash var(--duration-flash) var(--ease-standard);
+}
+
+/*
+  Progresso indeterminado (troca de mês sem cache, painel seção 5). O trilho é o pai
+  (`overflow-hidden`); a barra tem 40% da largura e corre da esquerda para a direita.
+*/
+@keyframes progress-indeterminate {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+.progress-indeterminate {
+  width: 40%;
+  animation: progress-indeterminate var(--duration-loop) var(--ease-standard) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 1ms;
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+    --duration-slow: 1ms;
+    --duration-chart: 1ms;
+    --duration-hero: 1ms;
+  }
+
   *,
   *::before,
   *::after {
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+  }
+
+  /* Folhas e diálogos aparecem só com opacidade; o esqueleto fica parado no tom muted. */
+  .dialog-in,
+  .sheet-side-in {
+    animation-name: overlay-in !important;
+  }
+
+  .dialog-in[data-state='closed'],
+  .sheet-side-in[data-state='closed'] {
+    animation-name: overlay-out !important;
+  }
+
+  .skeleton {
+    animation: none !important;
+    background: var(--muted);
+  }
+
+  /* Linha salva: fica marcada e some sem esmaecer. */
+  .row-flash {
+    animation: row-flash-hold var(--duration-flash-hold) step-end !important;
+  }
+
+  /* Progresso indeterminado: barra parada, cheia e mais fraca (o aria-busy já informa). */
+  .progress-indeterminate {
+    width: 100%;
+    opacity: 0.6;
+    animation: none !important;
   }
 }

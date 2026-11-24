@@ -1,78 +1,110 @@
 import { formatBrl } from '@/domain/money'
-import { formatShortDate, toIsoDate } from '@/domain/month'
-import { FALLBACK_COLOR } from '@/domain/summary'
 import type { Category, Transaction } from '@/domain/types'
+import { dayHeading, groupByDay, rowEditLabel } from '@/features/lancamentos/filters'
+import { CategoryAvatar } from '@/shared/components/category-avatar'
+import { RowFlash } from '@/shared/components/row-flash'
+import { flashTokenFor, type RowFlashMark } from '@/shared/lib/row-flash'
 import { cn } from '@/shared/lib/utils'
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 
-function relativeDay(iso: string): string {
-  const today = new Date()
-  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1)
-  if (iso === toIsoDate(today)) return 'Hoje'
-  if (iso === toIsoDate(yesterday)) return 'Ontem'
-  return formatShortDate(iso)
-}
+/**
+  Lista agrupada por dia (design system 10.11), usada no painel e na tela de lançamentos.
+  Cada dia é um `ul` com o cabeçalho em `h3`, para navegar por títulos.
 
-/** Lista agrupada por dia, usada no painel e na tela de lançamentos. */
+  - `renderActions`: botões da linha (desktop). Ficam a 60% e vão a 100% no hover/foco da linha.
+  - `onSelect`: a linha inteira vira um botão que abre a edição (celular). Ignora `renderActions`.
+  - `dayTotals`: mostra o saldo do dia à direita do cabeçalho.
+  - `flash`: a linha recém-criada ou editada acende `brand-soft` e esmaece (`row-flash`).
+*/
 export function TransactionGroups({
   transactions,
   categories,
   renderActions,
+  onSelect,
+  dayTotals = false,
+  flash,
+  className,
 }: {
   transactions: Transaction[]
   categories: Category[]
   renderActions?: (transaction: Transaction) => ReactNode
+  onSelect?: (transaction: Transaction) => void
+  dayTotals?: boolean
+  flash?: RowFlashMark
+  className?: string
 }) {
+  const baseId = useId()
   const byId = new Map(categories.map((category) => [category.id, category]))
-  const groups: Array<{ date: string; items: Transaction[] }> = []
-  for (const transaction of transactions) {
-    const last = groups.at(-1)
-    if (last?.date === transaction.occurredOn) last.items.push(transaction)
-    else groups.push({ date: transaction.occurredOn, items: [transaction] })
-  }
+  const groups = groupByDay(transactions)
 
   return (
-    <div className="surface overflow-hidden py-2">
-      {groups.map((group) => (
-        <div key={group.date} className="border-t border-background pt-1 first:border-t-0 first:pt-0">
-          <p className="eyebrow px-4 pt-3 pb-1">{relativeDay(group.date)}</p>
-          <ul className="grid">
-            {group.items.map((transaction) => {
-              const category = byId.get(transaction.categoryId)
-              const color = category?.color ?? FALLBACK_COLOR
-              const isIncome = transaction.kind === 'income'
-              return (
-                <li
-                  key={transaction.id}
-                  className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent/50"
-                >
-                  <span
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full font-display text-sm font-semibold"
-                    style={{ backgroundColor: `${color}24`, color }}
-                    aria-hidden="true"
-                  >
-                    {(category?.name ?? '?').charAt(0).toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium">{transaction.description}</p>
-                    <p className="truncate text-xs text-muted-foreground">{category?.name ?? 'Sem categoria'}</p>
-                  </div>
-                  <span
-                    className={cn(
-                      'figure shrink-0 text-right text-[15px] font-semibold',
-                      isIncome ? 'text-income' : 'text-foreground',
+    <div className={cn('surface overflow-hidden py-2', className)}>
+      {groups.map((group) => {
+        const headingId = `${baseId}-${group.date}`
+        return (
+          <section key={group.date} aria-labelledby={headingId} className="border-t border-border pt-1 first:border-t-0 first:pt-0">
+            <div className="flex items-baseline justify-between gap-3 px-4 pt-3 pb-1">
+              <h3 id={headingId} className="eyebrow">
+                {dayHeading(group.date)}
+              </h3>
+              {dayTotals ? (
+                <span className="figure text-caption text-muted-foreground">
+                  <span className="sr-only">Saldo do dia: </span>
+                  {group.netCents > 0 ? '+ ' : group.netCents < 0 ? '− ' : ''}
+                  {formatBrl(Math.abs(group.netCents) / 100)}
+                </span>
+              ) : null}
+            </div>
+            <ul className="grid">
+              {group.items.map((transaction) => {
+                const category = byId.get(transaction.categoryId)
+                const content = <RowContent transaction={transaction} category={category} />
+                return (
+                  <li key={transaction.id} className="group relative">
+                    <RowFlash token={flash ? flashTokenFor(flash, transaction.id) : null} />
+                    {onSelect ? (
+                      <button
+                        type="button"
+                        aria-label={rowEditLabel(transaction, category?.name)}
+                        onClick={() => onSelect(transaction)}
+                        className="relative flex min-h-14 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors duration-(--duration-fast) hover:bg-accent/50 focus-visible:-outline-offset-2"
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <div className="relative flex min-h-14 items-center gap-3 px-4 py-2 transition-colors duration-(--duration-fast) group-focus-within:bg-accent/50 hover:bg-accent/50">
+                        {content}
+                        {renderActions ? (
+                          <div className="-mr-2 flex shrink-0 opacity-60 transition-opacity duration-(--duration-fast) group-focus-within:opacity-100 group-hover:opacity-100">
+                            {renderActions(transaction)}
+                          </div>
+                        ) : null}
+                      </div>
                     )}
-                  >
-                    {isIncome ? '+ ' : '− '}
-                    {formatBrl(transaction.amount)}
-                  </span>
-                  {renderActions ? renderActions(transaction) : null}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )
+      })}
     </div>
+  )
+}
+
+function RowContent({ transaction, category }: { transaction: Transaction; category: Category | undefined }) {
+  const isIncome = transaction.kind === 'income'
+  return (
+    <>
+      <CategoryAvatar name={category?.name} color={category?.color} />
+      <span className="grid min-w-0 flex-1">
+        <span className="truncate text-body font-medium">{transaction.description}</span>
+        <span className="truncate text-caption text-muted-foreground">{category?.name ?? 'Sem categoria'}</span>
+      </span>
+      <span className={cn('figure shrink-0 text-right text-body font-semibold', isIncome ? 'text-income' : 'text-foreground')}>
+        {isIncome ? '+ ' : '− '}
+        {formatBrl(transaction.amount)}
+      </span>
+    </>
   )
 }

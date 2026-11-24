@@ -1,17 +1,5 @@
-export const CATEGORY_COLORS = [
-  '#f97316',
-  '#6366f1',
-  '#0ea5e9',
-  '#14b8a6',
-  '#ec4899',
-  '#8b5cf6',
-  '#eab308',
-  '#64748b',
-  '#16a34a',
-  '#22c55e',
-  '#84cc16',
-  '#ef4444',
-  '#0891b2',
-  '#a855f7',
-  '#f59e0b',
-]
+/**
+  As cores de categoria moram em `src/shared/lib/category-colors.ts`, porque peças
+  compartilhadas (avatar, gráficos) também precisam delas e `shared` não importa `features`.
+*/
+export { CATEGORY_SLOTS, categorySlot, isPaletteColor } from '@/shared/lib/category-colors'

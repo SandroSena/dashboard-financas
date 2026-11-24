@@ -1,6 +1,10 @@
 import { formatBrl } from '@/domain/money'
 import { cn } from '@/shared/lib/utils'
 
+/**
+  Valor em reais numa linha de texto, com algarismos tabulares (`figure`).
+  `balance` pinta pelo sinal; o sinal "−" já vem do formato, então a cor nunca vai sozinha.
+*/
 export function MoneyText({
   value,
   tone = 'default',
@@ -21,5 +25,5 @@ export function MoneyText({
             : 'text-expense'
           : undefined
 
-  return <span className={cn('tabular-nums', toneClass, className)}>{formatBrl(value)}</span>
+  return <span className={cn('figure', toneClass, className)}>{formatBrl(value)}</span>
 }

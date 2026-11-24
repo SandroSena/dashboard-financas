@@ -1,94 +1,133 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { MailCheck } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { AuthShell } from '@/features/auth/auth-shell'
 import { useAuth } from '@/features/auth/auth-context'
+import { describeAuthError, redirectTarget, type AuthErrorView } from '@/features/auth/auth-errors'
 import { credentialsSchema, type Credentials } from '@/features/auth/schema'
-import { errorMessage } from '@/shared/lib/supabase'
+import { ServerError } from '@/features/auth/server-error'
 import { Button } from '@/shared/ui/button'
-import { Field, PasswordInput, TextInput } from '@/shared/ui/dialog'
+import { Field } from '@/shared/ui/field'
+import { PasswordInput, TextInput } from '@/shared/ui/input'
 
+const linkClass = 'rounded-chip font-semibold text-brand underline-offset-4 hover:underline'
+
+/** `/criar-conta` (UX-95, UX-96). */
 export function SignupPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
-  const [formError, setFormError] = useState<string | null>(null)
+  const location = useLocation()
+  const [serverError, setServerError] = useState<(AuthErrorView & { email: string }) | null>(null)
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null)
+  const confirmHeading = useRef<HTMLDivElement>(null)
   const form = useForm<Credentials>({
     resolver: zodResolver(credentialsSchema),
     defaultValues: { email: '', password: '' },
+    reValidateMode: 'onBlur',
   })
+  const submitting = form.formState.isSubmitting
 
   useEffect(() => {
-    document.title = 'Criar conta | Finanças'
-  }, [])
+    document.title = confirmEmail ? 'Confiram o e-mail | Finanças' : 'Criar conta | Finanças'
+    if (confirmEmail) confirmHeading.current?.focus()
+  }, [confirmEmail])
 
   async function onSubmit(values: Credentials) {
-    setFormError(null)
+    setServerError(null)
     try {
       const result = await signUp(values.email, values.password)
       if (result === 'confirm-email') {
-        setConfirmEmail(values.email)
+        setConfirmEmail(values.email.trim())
         return
       }
-      navigate('/painel', { replace: true })
+      navigate(redirectTarget(location.state), { replace: true })
     } catch (error) {
-      setFormError(errorMessage(error))
+      setServerError({ ...describeAuthError(error), email: values.email.trim() })
     }
+  }
+
+  if (confirmEmail) {
+    return (
+      <AuthShell
+        title="Confiram o e-mail"
+        subtitle={
+          <p>
+            Mandamos um link para <span className="font-semibold break-all text-foreground">{confirmEmail}</span>. Abram o link
+            para ativar a conta e depois entrem por aqui.
+          </p>
+        }
+      >
+        <div ref={confirmHeading} tabIndex={-1} role="status" className="grid gap-6 focus-visible:outline-none">
+          <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
+            <MailCheck className="size-6" />
+          </span>
+          <Button variant="outline" size="lg" className="w-full" asChild>
+            <Link to="/entrar" state={{ ...(location.state as object | null), email: confirmEmail }}>
+              Voltar para entrar
+            </Link>
+          </Button>
+        </div>
+      </AuthShell>
+    )
   }
 
   return (
     <AuthShell
-      title="Criar conta"
-      subtitle="Alimentação, moradia, transporte e as outras categorias do dia a dia já vêm prontas."
+      title="Vamos começar"
+      subtitle="Uma conta para a casa toda acompanhar o mês."
       footer={
         <>
-          Já tem conta?{' '}
-          <Link to="/entrar" className="font-semibold text-brand underline-offset-4 hover:underline">
+          Já têm conta?{' '}
+          <Link to="/entrar" state={location.state} className={linkClass}>
             Entrar
           </Link>
         </>
       }
     >
-      {confirmEmail ? (
-        <div className="flex gap-3 rounded-xl bg-brand-soft p-4 text-sm" role="status">
-          <MailCheck className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />
-          <p>
-            Enviamos um link de confirmação para <span className="font-semibold">{confirmEmail}</span>. Abra o link e
-            depois entre com a senha que você acabou de criar.
-          </p>
-        </div>
-      ) : (
-        <form className="grid gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      <form className="grid gap-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+        <fieldset disabled={submitting} className="grid min-w-0 gap-5">
           <Field label="E-mail" htmlFor="signup-email" error={form.formState.errors.email?.message}>
             <TextInput
               id="signup-email"
               type="email"
+              inputMode="email"
               autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              enterKeyHint="next"
               autoFocus
-              aria-invalid={Boolean(form.formState.errors.email)}
               {...form.register('email')}
             />
           </Field>
-          <Field label="Senha" htmlFor="signup-password" error={form.formState.errors.password?.message}>
-            <PasswordInput
-              id="signup-password"
-              autoComplete="new-password"
-              aria-invalid={Boolean(form.formState.errors.password)}
-              {...form.register('password')}
-            />
+          {/* UX-96: a ajuda aparece antes de qualquer erro, ligada por aria-describedby (Field). */}
+          <Field
+            label="Senha"
+            htmlFor="signup-password"
+            hint="Pelo menos 8 caracteres."
+            error={form.formState.errors.password?.message}
+          >
+            <PasswordInput id="signup-password" autoComplete="new-password" enterKeyHint="go" {...form.register('password')} />
           </Field>
-          {formError ? (
-            <p className="rounded-lg bg-destructive/8 px-3.5 py-2.5 text-sm text-destructive" role="alert">
-              {formError}
-            </p>
-          ) : null}
-          <Button type="submit" size="lg" className="mt-1" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'Criando...' : 'Criar conta'}
-          </Button>
-        </form>
-      )}
+        </fieldset>
+        {serverError ? (
+          <ServerError>
+            {serverError.text}
+            {serverError.kind === 'exists' ? (
+              <>
+                {' '}
+                <Link to="/entrar" state={{ ...(location.state as object | null), email: serverError.email }} className="font-semibold underline underline-offset-4">
+                  Entrar com esse e-mail
+                </Link>
+              </>
+            ) : null}
+          </ServerError>
+        ) : null}
+        <Button type="submit" size="lg" className="w-full" loading={submitting}>
+          {submitting ? 'Criando conta...' : 'Criar conta'}
+        </Button>
+      </form>
     </AuthShell>
   )
 }

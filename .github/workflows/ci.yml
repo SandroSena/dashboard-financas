@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+# Mínimo privilégio: o GITHUB_TOKEN só lê o repositório.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -15,18 +19,20 @@ jobs:
     name: Lint, tipos, testes e build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
 
       - run: npm ci
       - run: npm run lint
-      - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+      # O `build` já roda `tsc -b` (checagem de tipos) antes do `vite build`,
+      # então não há um passo `typecheck` separado.
+      - name: Tipos e build
+        run: npm run build
         env:
           # Valores fictícios: aqui o build só precisa compilar.
           # O build real de produção usa as variáveis configuradas na Vercel.
@@ -38,31 +44,36 @@ jobs:
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      # A CLI lê o token do ambiente; assim ele não aparece na linha de comando.
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: npm
 
+      # Versão fixa: um release novo da CLI não quebra o deploy sem aviso.
       - name: Instalar Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@66.6.0
 
       - name: Baixar configuração e variáveis de produção
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production
 
       - name: Build
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod
 
       - name: Publicar
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prebuilt --prod)
           echo "url=$url" >> "$GITHUB_OUTPUT"

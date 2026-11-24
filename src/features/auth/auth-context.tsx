@@ -19,7 +19,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const { data } = getSupabase().auth.onAuthStateChange((_event, session) => {
+    const { data } = getSupabase().auth.onAuthStateChange((event, session) => {
+      // Sessão encerrada por qualquer caminho (outra aba, token revogado, expiração):
+      // o cache de lançamentos/metas da conta não pode sobrar para a próxima pessoa.
+      if (event === 'SIGNED_OUT') queryClient.clear()
       setUser(session?.user ?? null)
       setLoading(false)
     })
